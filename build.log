@@ -1,0 +1,44 @@
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] ---------------------< com.osdosoft:torneo-futbol >---------------------
+[INFO] Building torneo-futbol 0.0.1-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- clean:3.4.1:clean (default-clean) @ torneo-futbol ---
+[INFO] Deleting C:\personal proyect\torneo-futbol\target
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ torneo-futbol ---
+[INFO] Copying 1 resource from src\main\resources to target\classes
+[INFO] Copying 0 resource from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.14.1:compile (default-compile) @ torneo-futbol ---
+[INFO] Recompiling the module because of changed source code.
+[INFO] Compiling 46 source files with javac [debug parameters release 17] to target\classes
+[INFO] -------------------------------------------------------------
+[ERROR] COMPILATION ERROR : 
+[INFO] -------------------------------------------------------------
+[ERROR] /C:/personal proyect/torneo-futbol/src/main/java/com/osdosoft/torneo_futbol/infrastructure/adapter/out/persistence/TorneoPersistenceAdapter.java:[89,26] method findByEquipoId(java.util.UUID) is already defined in class com.osdosoft.torneo_futbol.infrastructure.adapter.out.persistence.TorneoPersistenceAdapter
+[ERROR] /C:/personal proyect/torneo-futbol/src/main/java/com/osdosoft/torneo_futbol/infrastructure/adapter/out/persistence/TorneoPersistenceAdapter.java:[15,8] com.osdosoft.torneo_futbol.infrastructure.adapter.out.persistence.TorneoPersistenceAdapter is not abstract and does not override abstract method findByEquipoId(java.util.UUID) in com.osdosoft.torneo_futbol.domain.port.out.JugadorRepositoryPort
+[ERROR] /C:/personal proyect/torneo-futbol/src/main/java/com/osdosoft/torneo_futbol/infrastructure/adapter/out/persistence/TorneoPersistenceAdapter.java:[61,29] findByEquipoId(java.util.UUID) in com.osdosoft.torneo_futbol.infrastructure.adapter.out.persistence.TorneoPersistenceAdapter cannot implement findByEquipoId(java.util.UUID) in com.osdosoft.torneo_futbol.domain.port.out.JugadorRepositoryPort
+  return type java.util.Optional<com.osdosoft.torneo_futbol.domain.model.Equipo> is not compatible with java.util.List<com.osdosoft.torneo_futbol.domain.model.Jugador>
+[INFO] 3 errors 
+[INFO] -------------------------------------------------------------
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  2.016 s
+[INFO] Finished at: 2026-02-04T17:08:27-05:00
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal org.apache.maven.plugins:maven-compiler-plugin:3.14.1:compile (default-compile) on project torneo-futbol: Compilation failure: Compilation failure: 
+[ERROR] /C:/personal proyect/torneo-futbol/src/main/java/com/osdosoft/torneo_futbol/infrastructure/adapter/out/persistence/TorneoPersistenceAdapter.java:[89,26] method findByEquipoId(java.util.UUID) is already defined in class com.osdosoft.torneo_futbol.infrastructure.adapter.out.persistence.TorneoPersistenceAdapter
+[ERROR] /C:/personal proyect/torneo-futbol/src/main/java/com/osdosoft/torneo_futbol/infrastructure/adapter/out/persistence/TorneoPersistenceAdapter.java:[15,8] com.osdosoft.torneo_futbol.infrastructure.adapter.out.persistence.TorneoPersistenceAdapter is not abstract and does not override abstract method findByEquipoId(java.util.UUID) in com.osdosoft.torneo_futbol.domain.port.out.JugadorRepositoryPort
+[ERROR] /C:/personal proyect/torneo-futbol/src/main/java/com/osdosoft/torneo_futbol/infrastructure/adapter/out/persistence/TorneoPersistenceAdapter.java:[61,29] findByEquipoId(java.util.UUID) in com.osdosoft.torneo_futbol.infrastructure.adapter.out.persistence.TorneoPersistenceAdapter cannot implement findByEquipoId(java.util.UUID) in com.osdosoft.torneo_futbol.domain.port.out.JugadorRepositoryPort
+[ERROR]   return type java.util.Optional<com.osdosoft.torneo_futbol.domain.model.Equipo> is not compatible with java.util.List<com.osdosoft.torneo_futbol.domain.model.Jugador>
+[ERROR] -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoFailureException
