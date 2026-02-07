@@ -1,3 +1,5 @@
+import { useMemo, useState } from 'react'
+
 export default function PartidosPage({
   partidos,
   equiposById,
@@ -8,6 +10,17 @@ export default function PartidosPage({
   setResultadoForm,
   onRegistrarResultado,
 }) {
+  const [estadoFiltro, setEstadoFiltro] = useState('')
+  const [jornadaFiltro, setJornadaFiltro] = useState('')
+
+  const partidosFiltrados = useMemo(() => {
+    return partidos.filter((p) => {
+      const matchEstado = estadoFiltro ? p.resultado === estadoFiltro : true
+      const matchJornada = jornadaFiltro ? String(p.jornada) === String(jornadaFiltro) : true
+      return matchEstado && matchJornada
+    })
+  }, [partidos, estadoFiltro, jornadaFiltro])
+
   return (
     <div className="page">
       <div className="page-header">
@@ -17,36 +30,12 @@ export default function PartidosPage({
         </div>
       </div>
 
-      <div className="split">
-        <div className="card">
-          <div className="card-header">
-            <h2>Listado de partidos</h2>
-          </div>
-          <div className="table">
-            <div className="table-head">
-              <span>Jornada</span>
-              <span>Local</span>
-              <span>Visitante</span>
-              <span>Fecha</span>
-              <span>Estado</span>
-            </div>
-            {partidos.map((p) => (
-              <div key={p.id} className="table-row">
-                <span>{p.jornada}</span>
-                <span>{equiposById.get(p.equipoLocalId) || p.equipoLocalId}</span>
-                <span>{equiposById.get(p.equipoVisitanteId) || p.equipoVisitanteId}</span>
-                <span>{p.fechaProgramada ? new Date(p.fechaProgramada).toLocaleString() : 'Sin fecha'}</span>
-                <span>{p.resultado}</span>
-              </div>
-            ))}
-          </div>
+      <div className="card">
+        <div className="card-header">
+          <h2>Gestión de partidos</h2>
         </div>
 
-        <div className="card">
-          <div className="card-header">
-            <h2>Gestión de partidos</h2>
-          </div>
-
+        <div className="split forms-top">
           <form onSubmit={onProgramarPartido} className="form">
             <div className="form-title">Programar partido</div>
             <select
@@ -99,6 +88,57 @@ export default function PartidosPage({
             </div>
             <button className="btn block ghost" type="submit">Registrar resultado</button>
           </form>
+        </div>
+      </div>
+
+      <div className="card">
+        <div className="card-header">
+          <div>
+            <h2>Listado de partidos</h2>
+            <div className="muted">Filtra por jornada o estado.</div>
+          </div>
+          <div className="filters">
+            <input
+              className="filter-input"
+              type="number"
+              min="1"
+              placeholder="Jornada"
+              value={jornadaFiltro}
+              onChange={(e) => setJornadaFiltro(e.target.value)}
+            />
+            <select
+              className="filter-input"
+              value={estadoFiltro}
+              onChange={(e) => setEstadoFiltro(e.target.value)}
+            >
+              <option value="">Todos</option>
+              <option value="PENDIENTE">Pendiente</option>
+              <option value="LOCAL_GANO">Local ganó</option>
+              <option value="VISITANTE_GANO">Visitante ganó</option>
+              <option value="EMPATE">Empate</option>
+            </select>
+          </div>
+        </div>
+        <div className="table">
+          <div className="table-head">
+            <span>Jornada</span>
+            <span>Local</span>
+            <span>Visitante</span>
+            <span>Fecha</span>
+            <span>Estado</span>
+          </div>
+          {partidosFiltrados.map((p) => (
+            <div key={p.id} className="table-row">
+              <span>{p.jornada}</span>
+              <span>{equiposById.get(p.equipoLocalId) || p.equipoLocalId}</span>
+              <span>{equiposById.get(p.equipoVisitanteId) || p.equipoVisitanteId}</span>
+              <span>{p.fechaProgramada ? new Date(p.fechaProgramada).toLocaleString() : 'Sin fecha'}</span>
+              <span>{p.resultado}</span>
+            </div>
+          ))}
+          {partidosFiltrados.length === 0 && (
+            <div className="muted">No hay partidos con esos filtros.</div>
+          )}
         </div>
       </div>
     </div>

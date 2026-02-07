@@ -286,6 +286,7 @@ export default function App() {
       setSuccess(label)
     } catch (e) {
       setError(normalizeError(e))
+      await loadTorneos()
     }
   }
 
