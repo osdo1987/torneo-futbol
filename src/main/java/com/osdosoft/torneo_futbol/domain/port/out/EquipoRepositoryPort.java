@@ -8,7 +8,7 @@ import java.util.List;
 public interface EquipoRepositoryPort {
     Equipo save(Equipo equipo);
 
-    Optional<Equipo> findByEquipoId(UUID id);
+    Optional<Equipo> findById(UUID id);
 
     List<Equipo> findByTorneoId(UUID torneoId);
 }

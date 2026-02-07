@@ -58,7 +58,7 @@ public class TorneoPersistenceAdapter
     }
 
     @Override
-    public Optional<Equipo> findByEquipoId(UUID id) {
+    public Optional<Equipo> findById(UUID id) {
         return equipoRepo.findById(id)
                 .map(e -> new Equipo(e.getId(), e.getNombre(), e.getDelegadoEmail(), e.getTorneoId()));
     }

@@ -3,6 +3,7 @@ package com.osdosoft.torneo_futbol.infrastructure.adapter.in.rest.controller;
 import com.osdosoft.torneo_futbol.domain.model.PosicionTabla;
 import com.osdosoft.torneo_futbol.domain.model.Torneo;
 import com.osdosoft.torneo_futbol.domain.port.in.AbrirInscripcionesUseCase;
+import com.osdosoft.torneo_futbol.domain.port.in.ActualizarTorneoUseCase;
 import com.osdosoft.torneo_futbol.domain.port.in.CerrarInscripcionesUseCase;
 import com.osdosoft.torneo_futbol.domain.port.in.CrearTorneoUseCase;
 import com.osdosoft.torneo_futbol.domain.port.in.ConsultarTorneoUseCase;
@@ -12,6 +13,7 @@ import com.osdosoft.torneo_futbol.domain.port.in.SorteoUseCase;
 import com.osdosoft.torneo_futbol.infrastructure.adapter.in.rest.dto.PosicionTablaResponse;
 import com.osdosoft.torneo_futbol.infrastructure.adapter.in.rest.dto.TorneoRequest;
 import com.osdosoft.torneo_futbol.infrastructure.adapter.in.rest.dto.TorneoResponse;
+import com.osdosoft.torneo_futbol.infrastructure.adapter.in.rest.dto.TorneoUpdateRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -31,6 +33,7 @@ public class TorneoController {
     private final CerrarInscripcionesUseCase cerrarInscripcionesUseCase;
     private final FinalizarTorneoUseCase finalizarTorneoUseCase;
     private final ObtenerTablaPosicionesUseCase obtenerTablaPosicionesUseCase;
+    private final ActualizarTorneoUseCase actualizarTorneoUseCase;
 
     public TorneoController(CrearTorneoUseCase crearTorneoUseCase,
             ConsultarTorneoUseCase consultarTorneoUseCase,
@@ -38,7 +41,8 @@ public class TorneoController {
             AbrirInscripcionesUseCase abrirInscripcionesUseCase,
             CerrarInscripcionesUseCase cerrarInscripcionesUseCase,
             FinalizarTorneoUseCase finalizarTorneoUseCase,
-            ObtenerTablaPosicionesUseCase obtenerTablaPosicionesUseCase) {
+            ObtenerTablaPosicionesUseCase obtenerTablaPosicionesUseCase,
+            ActualizarTorneoUseCase actualizarTorneoUseCase) {
         this.crearTorneoUseCase = crearTorneoUseCase;
         this.consultarTorneoUseCase = consultarTorneoUseCase;
         this.sorteoUseCase = sorteoUseCase;
@@ -46,11 +50,25 @@ public class TorneoController {
         this.cerrarInscripcionesUseCase = cerrarInscripcionesUseCase;
         this.finalizarTorneoUseCase = finalizarTorneoUseCase;
         this.obtenerTablaPosicionesUseCase = obtenerTablaPosicionesUseCase;
+        this.actualizarTorneoUseCase = actualizarTorneoUseCase;
     }
 
     @PostMapping
     public ResponseEntity<TorneoResponse> crearTorneo(@Valid @RequestBody TorneoRequest request) {
         Torneo torneo = crearTorneoUseCase.crearTorneo(
+                request.nombre(),
+                request.maxJugadoresPorEquipo(),
+                request.puntosVictoria(),
+                request.puntosEmpate(),
+                request.puntosDerrota());
+        return ResponseEntity.ok(mapToResponse(torneo));
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<TorneoResponse> actualizarTorneo(@PathVariable UUID id,
+            @Valid @RequestBody TorneoUpdateRequest request) {
+        Torneo torneo = actualizarTorneoUseCase.actualizarTorneo(
+                id,
                 request.nombre(),
                 request.maxJugadoresPorEquipo(),
                 request.puntosVictoria(),

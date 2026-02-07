@@ -32,7 +32,7 @@ public class InscribirJugadorUseCaseImpl implements InscribirJugadorUseCase {
             throw new IllegalStateException("Inscripciones cerradas");
         }
 
-        Equipo equipo = equipoRepository.findByEquipoId(equipoId)
+        Equipo equipo = equipoRepository.findById(equipoId)
                 .orElseThrow(() -> new IllegalArgumentException("Equipo no encontrado"));
 
         if (!equipo.getTorneoId().equals(torneoId)) {

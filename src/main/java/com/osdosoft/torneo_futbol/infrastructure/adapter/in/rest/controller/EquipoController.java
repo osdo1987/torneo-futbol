@@ -2,6 +2,7 @@ package com.osdosoft.torneo_futbol.infrastructure.adapter.in.rest.controller;
 
 import com.osdosoft.torneo_futbol.domain.model.Equipo;
 import com.osdosoft.torneo_futbol.domain.model.Jugador;
+import com.osdosoft.torneo_futbol.domain.port.in.ConsultarEquiposUseCase;
 import com.osdosoft.torneo_futbol.domain.port.in.InscribirEquipoUseCase;
 import com.osdosoft.torneo_futbol.domain.port.in.InscribirJugadorUseCase;
 import com.osdosoft.torneo_futbol.infrastructure.adapter.in.rest.dto.EquipoRequest;
@@ -12,7 +13,9 @@ import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/torneos/{torneoId}/equipos")
@@ -20,11 +23,30 @@ public class EquipoController {
 
     private final InscribirEquipoUseCase inscribirEquipoUseCase;
     private final InscribirJugadorUseCase inscribirJugadorUseCase;
+    private final ConsultarEquiposUseCase consultarEquiposUseCase;
 
     public EquipoController(InscribirEquipoUseCase inscribirEquipoUseCase,
-            InscribirJugadorUseCase inscribirJugadorUseCase) {
+            InscribirJugadorUseCase inscribirJugadorUseCase,
+            ConsultarEquiposUseCase consultarEquiposUseCase) {
         this.inscribirEquipoUseCase = inscribirEquipoUseCase;
         this.inscribirJugadorUseCase = inscribirJugadorUseCase;
+        this.consultarEquiposUseCase = consultarEquiposUseCase;
+    }
+
+    @GetMapping
+    public ResponseEntity<List<EquipoResponse>> listarEquipos(@PathVariable UUID torneoId) {
+        List<EquipoResponse> response = consultarEquiposUseCase.listarEquipos(torneoId).stream()
+                .map(this::mapEquipoResponse)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/{equipoId}/jugadores")
+    public ResponseEntity<List<JugadorResponse>> listarJugadores(@PathVariable UUID equipoId) {
+        List<JugadorResponse> response = consultarEquiposUseCase.listarJugadores(equipoId).stream()
+                .map(this::mapJugadorResponse)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping

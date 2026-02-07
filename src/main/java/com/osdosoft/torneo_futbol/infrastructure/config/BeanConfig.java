@@ -42,6 +42,17 @@ public class BeanConfig {
     }
 
     @Bean
+    public ActualizarTorneoUseCase actualizarTorneoUseCase(TorneoRepositoryPort torneoRepositoryPort) {
+        return new ActualizarTorneoUseCaseImpl(torneoRepositoryPort);
+    }
+
+    @Bean
+    public ConsultarEquiposUseCase consultarEquiposUseCase(EquipoRepositoryPort equipoRepositoryPort,
+            JugadorRepositoryPort jugadorRepositoryPort) {
+        return new ConsultarEquiposUseCaseImpl(equipoRepositoryPort, jugadorRepositoryPort);
+    }
+
+    @Bean
     public InscribirEquipoUseCase inscribirEquipoUseCase(EquipoRepositoryPort equipoRepositoryPort,
             TorneoRepositoryPort torneoRepositoryPort) {
         return new InscribirEquipoUseCaseImpl(equipoRepositoryPort, torneoRepositoryPort);

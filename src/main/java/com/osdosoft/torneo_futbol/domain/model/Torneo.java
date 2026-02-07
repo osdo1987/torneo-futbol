@@ -35,8 +35,8 @@ public class Torneo {
     }
 
     public void abrirInscripciones() {
-        if (this.estado != EstadoTorneo.CREADO) {
-            throw new IllegalStateException("Solo se pueden abrir inscripciones de un torneo CREADO");
+        if (this.estado != EstadoTorneo.CREADO && this.estado != EstadoTorneo.INSCRIPCIONES_CERRADAS) {
+            throw new IllegalStateException("Solo se pueden abrir inscripciones de un torneo CREADO o con inscripciones cerradas");
         }
         this.estado = EstadoTorneo.INSCRIPCIONES_ABIERTAS;
     }
