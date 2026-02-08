@@ -78,12 +78,17 @@ export default function PartidosPage({ selectedTorneoId }) {
     resultadoMutation.mutate(resultadoForm)
   }
 
+  const estadoClass = (resultado) => {
+    if (!resultado) return 'pendiente'
+    return String(resultado).toLowerCase()
+  }
+
   if (!selectedTorneoId) {
     return <Alert variant="info">Por favor, selecciona un torneo para gestionar los partidos.</Alert>
   }
 
   return (
-    <div className="page">
+    <div className="page partidos-page">
       <div className="page-header">
         <div>
           <div className="eyebrow">Operación</div>
@@ -140,7 +145,7 @@ export default function PartidosPage({ selectedTorneoId }) {
                 </option>
               ))}
             </select>
-            <div className="row">
+            <div className="form-row">
               <input
                 type="number"
                 min="0"
@@ -194,7 +199,7 @@ export default function PartidosPage({ selectedTorneoId }) {
             </select>
           </div>
         </div>
-        <div className="table">
+        <div className="table table-wide">
           <div className="table-head">
             <span>Jornada</span>
             <span>Local</span>
@@ -208,11 +213,11 @@ export default function PartidosPage({ selectedTorneoId }) {
               <span>{equiposById.get(p.equipoLocalId) || p.equipoLocalId}</span>
               <span>{equiposById.get(p.equipoVisitanteId) || p.equipoVisitanteId}</span>
               <span>{p.fechaProgramada ? new Date(p.fechaProgramada).toLocaleString() : 'Sin fecha'}</span>
-              <span>{p.resultado}</span>
+              <span className={`status-chip ${estadoClass(p.resultado)}`}>{p.resultado}</span>
             </div>
           ))}
           {partidosFiltrados.length === 0 && (
-            <div className="muted">No hay partidos con esos filtros.</div>
+            <div className="muted table-empty">No hay partidos con esos filtros.</div>
           )}
         </div>
       </div>

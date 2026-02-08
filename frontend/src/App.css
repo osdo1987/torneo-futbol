@@ -12,6 +12,9 @@
   display: grid;
   gap: 20px;
   animation: fadeUp 0.6s ease;
+  width: 100%;
+  max-width: 1180px;
+  margin: 0 auto;
 }
 
 .page-header {
@@ -226,6 +229,7 @@ h2 {
   box-shadow: var(--shadow);
   border: 1px solid rgba(255, 255, 255, 0.5);
   transition: transform 0.25s ease, box-shadow 0.25s ease;
+  width: 100%;
 }
 
 .card:hover {
@@ -311,6 +315,7 @@ h2 {
 .table {
   display: grid;
   gap: 10px;
+  width: 100%;
 }
 
 .table-head,
@@ -442,7 +447,7 @@ h2 {
   box-shadow: 0 0 0 3px rgba(25, 86, 196, 0.15);
 }
 
-.row {
+.form-row {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
@@ -720,7 +725,7 @@ h2 {
     grid-template-columns: 1fr 40px 40px 40px 40px 40px 40px 40px 50px;
   }
 
-  .row {
+  .form-row {
     grid-template-columns: 1fr;
   }
 }
@@ -735,8 +740,22 @@ h2 {
   gap: 14px;
 }
 
-.table-wide {
-  grid-template-columns: 60px 1fr 1fr 1.3fr 0.9fr;
+.table-wide .table-head,
+.table-wide .table-row {
+  grid-template-columns: 70px 1.2fr 1.2fr 1.4fr 0.9fr;
+}
+
+.table-empty {
+  padding: 12px 0;
+  text-align: center;
+}
+
+.partidos-page {
+  width: 100%;
+}
+
+.partidos-page .split {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .status-chip {
