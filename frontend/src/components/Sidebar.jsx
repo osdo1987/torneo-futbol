@@ -1,52 +1,72 @@
 import { NavLink } from 'react-router-dom'
+import { Form, Nav } from 'react-bootstrap'
+import { HouseDoor, Trophy, People, CalendarEvent, Table, Gear } from 'react-bootstrap-icons'
 
 export default function Sidebar({ torneos, selectedTorneoId, onSelectTorneo }) {
+  // Defensive check for torneos
+  if (!torneos) {
+    torneos = []
+  }
   return (
-    <aside className="sidebar">
-      <div className="brand">
-        <div className="brand-mark">TF</div>
-        <div>
-          <div className="brand-title">TorneoFutbol</div>
-          <div className="brand-sub">Panel de control</div>
-        </div>
-      </div>
+    <div className="d-flex flex-column flex-shrink-0 p-3 bg-light vh-100" style={{ width: 280 }}>
+      <a href="/" className="d-flex align-items-center mb-3 mb-md-0 me-md-auto link-dark text-decoration-none">
+        <span className="fs-4">TorneoFutbol</span>
+      </a>
+      <hr />
 
-      <div className="selector">
-        <label>Seleccionar torneo</label>
-        <select value={selectedTorneoId} onChange={(e) => onSelectTorneo(e.target.value)}>
+      <div className="mb-3">
+        <Form.Label>Seleccionar torneo</Form.Label>
+        <Form.Select value={selectedTorneoId} onChange={(e) => onSelectTorneo(e.target.value)}>
           {torneos.map((t) => (
             <option key={t.id} value={t.id}>
-              {t.nombre} · {t.estado}
+              {t.nombre} - {t.estado}
             </option>
           ))}
-        </select>
+        </Form.Select>
       </div>
 
-      <nav className="nav">
-        <NavLink className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`} to="/">
-          <span className="dot" />
-          Dashboard
-        </NavLink>
-        <NavLink className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`} to="/torneos">
-          Torneos
-        </NavLink>
-        <NavLink className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`} to="/equipos">
-          Equipos
-        </NavLink>
-        <NavLink className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`} to="/partidos">
-          Partidos
-        </NavLink>
-        <NavLink className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`} to="/tabla">
-          Tabla de posiciones
-        </NavLink>
-        <NavLink className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`} to="/config">
-          Configuración
-        </NavLink>
-      </nav>
-
-      <div className="sidebar-footer">
-        <div className="badge">Temporada 2026</div>
+      <Nav variant="pills" className="flex-column mb-auto">
+        <Nav.Item>
+          <Nav.Link as={NavLink} to="/" end>
+            <HouseDoor className="me-2" />
+            Dashboard
+          </Nav.Link>
+        </Nav.Item>
+        <Nav.Item>
+          <Nav.Link as={NavLink} to="/torneos">
+            <Trophy className="me-2" />
+            Torneos
+          </Nav.Link>
+        </Nav.Item>
+        <Nav.Item>
+          <Nav.Link as={NavLink} to="/equipos">
+            <People className="me-2" />
+            Equipos
+          </Nav.Link>
+        </Nav.Item>
+        <Nav.Item>
+          <Nav.Link as={NavLink} to="/partidos">
+            <CalendarEvent className="me-2" />
+            Partidos
+          </Nav.Link>
+        </Nav.Item>
+        <Nav.Item>
+          <Nav.Link as={NavLink} to="/tabla">
+            <Table className="me-2" />
+            Tabla
+          </Nav.Link>
+        </Nav.Item>
+        <Nav.Item>
+          <Nav.Link as={NavLink} to="/config">
+            <Gear className="me-2" />
+            ConfiguraciÃ³n
+          </Nav.Link>
+        </Nav.Item>
+      </Nav>
+      <hr />
+      <div className="text-muted">
+        <small>Temporada 2026</small>
       </div>
-    </aside>
+    </div>
   )
 }

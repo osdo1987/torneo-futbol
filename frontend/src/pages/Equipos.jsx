@@ -1,152 +1,229 @@
-import { useState } from 'react'
+ï»¿import { useState } from 'react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import {
+  Button,
+  Card,
+  Col,
+  Container,
+  Row,
+  Spinner,
+  Alert,
+  Modal,
+  Form,
+  ListGroup,
+  Badge,
+} from 'react-bootstrap'
+import { apiGet, apiPost } from '../api'
 
-export default function EquiposPage({
-  equipos,
-  jugadores,
-  selectedEquipoId,
-  onSelectEquipo,
-  equipoForm,
-  setEquipoForm,
-  onInscribirEquipo,
-  jugadorForm,
-  setJugadorForm,
-  onInscribirJugador,
-}) {
-  const [modalEquipo, setModalEquipo] = useState(false)
+const initialEquipoForm = { nombre: '', delegadoEmail: '' }
+const initialJugadorForm = { nombre: '', numeroCamiseta: 10 }
 
-  const equipoSeleccionado = equipos.find((e) => e.id === selectedEquipoId)
+function JugadoresPanel({ torneoId, equipo }) {
+  const queryClient = useQueryClient()
+  const [form, setForm] = useState(initialJugadorForm)
 
-  function handleCrearEquipo(e) {
-    onInscribirEquipo(e)
-    setModalEquipo(false)
-  }
+  const {
+    data: jugadores = [],
+    isLoading,
+    isError,
+    error,
+  } = useQuery({
+    queryKey: ['jugadores', torneoId, equipo.id],
+    queryFn: () => apiGet(`/torneos/${torneoId}/equipos/${equipo.id}/jugadores`),
+    enabled: !!torneoId && !!equipo.id,
+  })
 
-  function handleCrearJugador(e) {
-    onInscribirJugador(e)
+  const mutation = useMutation({
+    mutationFn: (newJugador) => apiPost(`/torneos/${torneoId}/equipos/${equipo.id}/jugadores`, newJugador),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['jugadores', torneoId, equipo.id])
+      setForm(initialJugadorForm)
+    },
+  })
+
+  const handleSubmit = (e) => {
+    e.preventDefault()
+    mutation.mutate(form)
   }
 
   return (
-    <div className="page">
-      <div className="page-header">
-        <div>
-          <div className="eyebrow">Gestión</div>
-          <h1>Equipos</h1>
-          <div className="muted">Crea equipos y agrega jugadores al equipo seleccionado.</div>
-        </div>
-        <button className="btn" onClick={() => setModalEquipo(true)}>
-          Crear equipo
-        </button>
-      </div>
+    <Card>
+      <Card.Header>
+        <Card.Title as="h4">Jugadores de {equipo.nombre}</Card.Title>
+      </Card.Header>
+      <Card.Body>
+        <Form onSubmit={handleSubmit} className="mb-4">
+          <h5>Agregar Jugador</h5>
+          <Row>
+            <Col md={6}>
+              <Form.Group>
+                <Form.Label>Nombre</Form.Label>
+                <Form.Control
+                  type="text"
+                  placeholder="Nombre del jugador"
+                  value={form.nombre}
+                  onChange={(e) => setForm({ ...form, nombre: e.target.value })}
+                />
+              </Form.Group>
+            </Col>
+            <Col md={3}>
+              <Form.Group>
+                <Form.Label>Camiseta</Form.Label>
+                <Form.Control
+                  type="number"
+                  value={form.numeroCamiseta}
+                  onChange={(e) => setForm({ ...form, numeroCamiseta: Number(e.target.value) })}
+                />
+              </Form.Group>
+            </Col>
+            <Col md={3} className="d-flex align-items-end">
+              <Button type="submit" disabled={mutation.isPending}>
+                {mutation.isPending ? <Spinner as="span" size="sm" /> : 'Agregar'}
+              </Button>
+            </Col>
+          </Row>
+          {mutation.isError && <Alert variant="danger" className="mt-2">{mutation.error.message}</Alert>}
+        </Form>
+        
+        <h5>Lista de Jugadores</h5>
+        {isLoading ? <Spinner animation="border" /> : null}
+        {isError ? <Alert variant="danger">{error.message}</Alert> : null}
+        <ListGroup>
+          {jugadores.length === 0 && <ListGroup.Item>No hay jugadores inscritos.</ListGroup.Item>}
+          {jugadores.map((j) => (
+            <ListGroup.Item key={j.id} className="d-flex justify-content-between align-items-center">
+              {j.nombre}
+              <Badge bg="secondary">#{j.numeroCamiseta}</Badge>
+            </ListGroup.Item>
+          ))}
+        </ListGroup>
+      </Card.Body>
+    </Card>
+  )
+}
 
-      <div className="split">
-        <div className="card">
-          <div className="card-header">
-            <h2>Equipos inscritos</h2>
-          </div>
-          <div className="simple-list">
-            {equipos.length === 0 && (
-              <div className="empty">
-                <div className="empty-title">No hay equipos aún</div>
-                <div className="muted">Crea el primer equipo para comenzar.</div>
-                <button className="btn" onClick={() => setModalEquipo(true)}>Crear equipo</button>
-              </div>
-            )}
-            {equipos.map((e) => (
-              <div key={e.id} className={`simple-row ${selectedEquipoId === e.id ? 'active-row' : ''}`}>
-                <div>
-                  <div className="strong">{e.nombre}</div>
-                  <div className="muted">Delegado: {e.delegadoEmail}</div>
-                </div>
-                <button className="btn ghost" onClick={() => onSelectEquipo(e.id)}>
-                  {selectedEquipoId === e.id ? 'Seleccionado' : 'Seleccionar'}
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
+export default function EquiposPage({ selectedTorneoId }) {
+  const queryClient = useQueryClient()
+  const [selectedEquipoId, setSelectedEquipoId] = useState(null)
+  const [showModal, setShowModal] = useState(false)
+  const [form, setForm] = useState(initialEquipoForm)
 
-        <div className="card">
-          <div className="card-header">
-            <div>
-              <h2>Jugadores</h2>
-              <div className="muted">
-                {equipoSeleccionado
-                  ? `Equipo: ${equipoSeleccionado.nombre}`
-                  : 'Selecciona un equipo para ver y agregar jugadores'}
-              </div>
-            </div>
-          </div>
+  const {
+    data: equipos = [],
+    isLoading,
+    isError,
+    error,
+  } = useQuery({
+    queryKey: ['equipos', selectedTorneoId],
+    queryFn: () => apiGet(`/torneos/${selectedTorneoId}/equipos`),
+    enabled: !!selectedTorneoId,
+    onSuccess: (data) => {
+      if (!selectedEquipoId && data.length > 0) {
+        setSelectedEquipoId(data[0].id)
+      }
+    }
+  })
 
-          {equipoSeleccionado ? (
-            <>
-              <div className="section">
-                <div className="section-title">Agregar jugador</div>
-                <form onSubmit={handleCrearJugador} className="form compact">
-                  <label className="form-label">Nombre del jugador</label>
-                  <input
-                    placeholder="Ej: Juan Pérez"
-                    value={jugadorForm.nombre}
-                    onChange={(e) => setJugadorForm({ ...jugadorForm, nombre: e.target.value })}
-                  />
-                  <label className="form-label">Número de camiseta</label>
-                  <input
-                    type="number"
-                    min="1"
-                    value={jugadorForm.numeroCamiseta}
-                    onChange={(e) => setJugadorForm({ ...jugadorForm, numeroCamiseta: Number(e.target.value) })}
-                    placeholder="Ej: 10"
-                  />
-                  <button className="btn block" type="submit">Agregar jugador</button>
-                </form>
-              </div>
+  const mutation = useMutation({
+    mutationFn: (newEquipo) => apiPost(`/torneos/${selectedTorneoId}/equipos`, newEquipo),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['equipos', selectedTorneoId])
+      queryClient.invalidateQueries(['tabla', selectedTorneoId])
+      setForm(initialEquipoForm)
+      setShowModal(false)
+    },
+  })
 
-              <div className="section">
-                <div className="section-title">Lista de jugadores</div>
-                <div className="simple-list">
-                  {jugadores.length === 0 && <div className="muted">Este equipo no tiene jugadores.</div>}
-                  {jugadores.map((j) => (
-                    <div key={j.id} className="simple-row">
-                      <span>{j.nombre}</span>
-                      <span className="muted">#{j.numeroCamiseta}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </>
+  const handleSubmit = (e) => {
+    e.preventDefault()
+    mutation.mutate(form)
+  }
+
+  if (!selectedTorneoId) {
+    return <Alert variant="info">Por favor, selecciona un torneo para gestionar los equipos.</Alert>
+  }
+  
+  const selectedEquipo = equipos.find(e => e.id === selectedEquipoId)
+
+  return (
+    <Container fluid>
+      <Row className="mb-3 align-items-center">
+        <Col>
+          <h1>GestiÃ³n de Equipos</h1>
+          <p className="text-muted">Inscribe equipos y agrega jugadores.</p>
+        </Col>
+        <Col className="text-end">
+          <Button onClick={() => setShowModal(true)}>Inscribir Equipo</Button>
+        </Col>
+      </Row>
+      
+      {isLoading ? <Spinner animation="border" /> : null}
+      {isError ? <Alert variant="danger">{error.message}</Alert> : null}
+      
+      <Row>
+        <Col md={4}>
+          <Card>
+            <Card.Header>
+              <Card.Title as="h4">Equipos Inscritos</Card.Title>
+            </Card.Header>
+            <ListGroup variant="flush">
+              {equipos.length === 0 && <ListGroup.Item>No hay equipos inscritos.</ListGroup.Item>}
+              {equipos.map((e) => (
+                <ListGroup.Item
+                  key={e.id}
+                  action
+                  active={e.id === selectedEquipoId}
+                  onClick={() => setSelectedEquipoId(e.id)}
+                >
+                  <div className="fw-bold">{e.nombre}</div>
+                  <small className="text-muted">{e.delegadoEmail}</small>
+                </ListGroup.Item>
+              ))}
+            </ListGroup>
+          </Card>
+        </Col>
+        <Col md={8}>
+          {selectedEquipo ? (
+            <JugadoresPanel torneoId={selectedTorneoId} equipo={selectedEquipo} />
           ) : (
-            <div className="empty">
-              <div className="empty-title">Selecciona un equipo</div>
-              <div className="muted">Luego podrás registrar jugadores aquí.</div>
-            </div>
+            <Alert variant="secondary">Selecciona un equipo para ver sus jugadores.</Alert>
           )}
-        </div>
-      </div>
+        </Col>
+      </Row>
 
-      {modalEquipo && (
-        <div className="modal-overlay" onClick={() => setModalEquipo(false)}>
-          <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2>Crear equipo</h2>
-              <button className="btn ghost" onClick={() => setModalEquipo(false)}>X</button>
-            </div>
-            <form onSubmit={handleCrearEquipo} className="form">
-              <label className="form-label">Nombre del equipo</label>
-              <input
+      <Modal show={showModal} onHide={() => setShowModal(false)}>
+        <Modal.Header closeButton>
+          <Modal.Title>Inscribir Nuevo Equipo</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Form onSubmit={handleSubmit}>
+            <Form.Group className="mb-3">
+              <Form.Label>Nombre del equipo</Form.Label>
+              <Form.Control
+                type="text"
                 placeholder="Ej: Leones FC"
-                value={equipoForm.nombre}
-                onChange={(e) => setEquipoForm({ ...equipoForm, nombre: e.target.value })}
+                value={form.nombre}
+                onChange={(e) => setForm({ ...form, nombre: e.target.value })}
+                required
               />
-              <label className="form-label">Email del delegado</label>
-              <input
-                placeholder="delegado@equipo.com"
-                value={equipoForm.delegadoEmail}
-                onChange={(e) => setEquipoForm({ ...equipoForm, delegadoEmail: e.target.value })}
+            </Form.Group>
+            <Form.Group className="mb-3">
+              <Form.Label>Email del delegado</Form.Label>
+              <Form.Control
+                type="email"
+                placeholder="delegado@email.com"
+                value={form.delegadoEmail}
+                onChange={(e) => setForm({ ...form, delegadoEmail: e.target.value })}
+                required
               />
-              <button className="btn block" type="submit">Guardar equipo</button>
-            </form>
-          </div>
-        </div>
-      )}
-    </div>
+            </Form.Group>
+            <Button variant="primary" type="submit" disabled={mutation.isPending}>
+              {mutation.isPending ? 'Inscribiendo...' : 'Inscribir Equipo'}
+            </Button>
+            {mutation.isError && <Alert variant="danger" className="mt-2">{mutation.error.message}</Alert>}
+          </Form>
+        </Modal.Body>
+      </Modal>
+    </Container>
   )
 }

@@ -4,21 +4,22 @@
   font-family: 'Work Sans', sans-serif;
   line-height: 1.5;
   font-weight: 400;
-  color: #1a2433;
-  background-color: #eef2f7;
+  color: #0f1b2d;
+  background-color: #edf2f8;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 
-  --bg: #eef2f7;
-  --bg-2: #e5ebf3;
-  --ink: #1a2433;
-  --muted: #5d6b7c;
-  --accent: #1f4ea8;
+  --bg: #edf2f8;
+  --bg-2: #e6eef7;
+  --ink: #0f1b2d;
+  --muted: #5e6b7a;
+  --accent: #1956c4;
   --accent-2: #0f8b8d;
+  --accent-3: #f2a34a;
   --card: #ffffff;
-  --line: rgba(26, 36, 51, 0.12);
+  --line: rgba(15, 27, 45, 0.12);
   --shadow: 0 18px 40px rgba(18, 28, 45, 0.12);
 }
 
@@ -29,12 +30,14 @@
 body {
   margin: 0;
   min-height: 100vh;
+  background: var(--bg);
 }
 
 h1,
 h2,
 h3 {
   font-family: 'Space Grotesk', sans-serif;
+  letter-spacing: -0.02em;
 }
 
 button,

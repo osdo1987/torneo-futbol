@@ -1,17 +1,43 @@
-import { useMemo, useState } from 'react'
+﻿import { useMemo, useState } from 'react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { Alert, Spinner } from 'react-bootstrap'
+import { apiGet, apiPut } from '../api'
 
-export default function PartidosPage({
-  partidos,
-  equiposById,
-  programarForm,
-  setProgramarForm,
-  onProgramarPartido,
-  resultadoForm,
-  setResultadoForm,
-  onRegistrarResultado,
-}) {
+const initialProgramarForm = { partidoId: '', fechaProgramada: '' }
+const initialResultadoForm = { partidoId: '', golesLocal: 0, golesVisitante: 0 }
+
+export default function PartidosPage({ selectedTorneoId }) {
+  const queryClient = useQueryClient()
   const [estadoFiltro, setEstadoFiltro] = useState('')
   const [jornadaFiltro, setJornadaFiltro] = useState('')
+  const [programarForm, setProgramarForm] = useState(initialProgramarForm)
+  const [resultadoForm, setResultadoForm] = useState(initialResultadoForm)
+
+  const {
+    data: partidos = [],
+    isLoading: loadingPartidos,
+    isError: isErrorPartidos,
+    error: errorPartidos,
+  } = useQuery({
+    queryKey: ['partidos', selectedTorneoId],
+    queryFn: () => apiGet(`/partidos/torneo/${selectedTorneoId}`),
+    enabled: !!selectedTorneoId,
+  })
+
+  const {
+    data: equipos = [],
+    isLoading: loadingEquipos,
+    isError: isErrorEquipos,
+    error: errorEquipos,
+  } = useQuery({
+    queryKey: ['equipos', selectedTorneoId],
+    queryFn: () => apiGet(`/torneos/${selectedTorneoId}/equipos`),
+    enabled: !!selectedTorneoId,
+  })
+
+  const equiposById = useMemo(() => {
+    return new Map(equipos.map((e) => [e.id, e.nombre]))
+  }, [equipos])
 
   const partidosFiltrados = useMemo(() => {
     return partidos.filter((p) => {
@@ -21,22 +47,61 @@ export default function PartidosPage({
     })
   }, [partidos, estadoFiltro, jornadaFiltro])
 
+  const programarMutation = useMutation({
+    mutationFn: ({ partidoId, fechaProgramada }) =>
+      apiPut(`/partidos/${partidoId}/programar`, { fechaProgramada }),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['partidos', selectedTorneoId])
+      setProgramarForm(initialProgramarForm)
+    },
+  })
+
+  const resultadoMutation = useMutation({
+    mutationFn: ({ partidoId, golesLocal, golesVisitante }) =>
+      apiPut(`/partidos/${partidoId}/resultado`, { golesLocal, golesVisitante }),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['partidos', selectedTorneoId])
+      queryClient.invalidateQueries(['tabla', selectedTorneoId])
+      setResultadoForm(initialResultadoForm)
+    },
+  })
+
+  const handleProgramar = (e) => {
+    e.preventDefault()
+    if (!programarForm.partidoId || !programarForm.fechaProgramada) return
+    programarMutation.mutate(programarForm)
+  }
+
+  const handleResultado = (e) => {
+    e.preventDefault()
+    if (!resultadoForm.partidoId) return
+    resultadoMutation.mutate(resultadoForm)
+  }
+
+  if (!selectedTorneoId) {
+    return <Alert variant="info">Por favor, selecciona un torneo para gestionar los partidos.</Alert>
+  }
+
   return (
     <div className="page">
       <div className="page-header">
         <div>
-          <div className="eyebrow">Operaci�n</div>
+          <div className="eyebrow">Operación</div>
           <h1>Partidos</h1>
         </div>
       </div>
 
+      {(loadingPartidos || loadingEquipos) && <Spinner animation="border" />}
+      {isErrorPartidos && <Alert variant="danger">Error al cargar partidos: {errorPartidos.message}</Alert>}
+      {isErrorEquipos && <Alert variant="danger">Error al cargar equipos: {errorEquipos.message}</Alert>}
+
       <div className="card">
         <div className="card-header">
-          <h2>Gesti�n de partidos</h2>
+          <h2>Gestión de partidos</h2>
         </div>
 
         <div className="split forms-top">
-          <form onSubmit={onProgramarPartido} className="form">
+          <form onSubmit={handleProgramar} className="form">
             <div className="form-title">Programar partido</div>
             <select
               value={programarForm.partidoId}
@@ -54,10 +119,15 @@ export default function PartidosPage({
               value={programarForm.fechaProgramada}
               onChange={(e) => setProgramarForm({ ...programarForm, fechaProgramada: e.target.value })}
             />
-            <button className="btn block secondary" type="submit">Programar</button>
+            <button className="btn block secondary" type="submit" disabled={programarMutation.isPending}>
+              {programarMutation.isPending ? 'Programando...' : 'Programar'}
+            </button>
+            {programarMutation.isError && (
+              <div className="muted">{programarMutation.error.message}</div>
+            )}
           </form>
 
-          <form onSubmit={onRegistrarResultado} className="form">
+          <form onSubmit={handleResultado} className="form">
             <div className="form-title">Registrar resultado</div>
             <select
               value={resultadoForm.partidoId}
@@ -86,7 +156,12 @@ export default function PartidosPage({
                 placeholder="Goles visitante"
               />
             </div>
-            <button className="btn block ghost" type="submit">Registrar resultado</button>
+            <button className="btn block ghost" type="submit" disabled={resultadoMutation.isPending}>
+              {resultadoMutation.isPending ? 'Registrando...' : 'Registrar resultado'}
+            </button>
+            {resultadoMutation.isError && (
+              <div className="muted">{resultadoMutation.error.message}</div>
+            )}
           </form>
         </div>
       </div>
@@ -113,8 +188,8 @@ export default function PartidosPage({
             >
               <option value="">Todos</option>
               <option value="PENDIENTE">Pendiente</option>
-              <option value="LOCAL_GANO">Local gan�</option>
-              <option value="VISITANTE_GANO">Visitante gan�</option>
+              <option value="LOCAL_GANO">Local ganó</option>
+              <option value="VISITANTE_GANO">Visitante ganó</option>
               <option value="EMPATE">Empate</option>
             </select>
           </div>
