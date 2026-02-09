@@ -20,6 +20,7 @@ const initialJugadorForm = { nombre: '', numeroCamiseta: 10, posicion: 'DELANTER
 
 function JugadoresPanel({ torneoId, equipo }) {
   const queryClient = useQueryClient()
+  const [form, setForm] = useState(initialJugadorForm)
   const [searchTerm, setSearchTerm] = useState('')
   const [filterPosicion, setFilterPosicion] = useState('TODAS')
 
