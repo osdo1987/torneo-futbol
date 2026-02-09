@@ -8,7 +8,9 @@ import java.util.UUID;
 public interface JpaJugadorRepository extends JpaRepository<JugadorEntity, UUID> {
     List<JugadorEntity> findByEquipoId(UUID equipoId);
 
-    int countByEquipoId(UUID equipoId);
+    int countByEquipoIdAndActivoTrue(UUID equipoId);
 
-    boolean existsByEquipoIdAndNumeroCamiseta(UUID equipoId, int numeroCamiseta);
+    boolean existsByEquipoIdAndNumeroCamisetaAndActivoTrue(UUID equipoId, int numeroCamiseta);
+
+    boolean existsByDocumentoIdentidadAndActivoTrue(String documentoIdentidad);
 }

@@ -15,4 +15,6 @@ public interface JugadorRepositoryPort {
     int countByEquipoId(UUID equipoId);
 
     boolean existsByEquipoIdAndNumeroCamiseta(UUID equipoId, int numeroCamiseta);
+
+    boolean existsByDocumentoIdentidad(String documentoIdentidad);
 }

@@ -26,7 +26,7 @@ public class TorneoPersistenceAdapter
     public Torneo save(Torneo torneo) {
         TorneoEntity entity = new TorneoEntity(torneo.getId(), torneo.getNombre(), torneo.getEstado(),
                 torneo.getMaxJugadoresPorEquipo(), torneo.getPuntosVictoria(), torneo.getPuntosEmpate(),
-                torneo.getPuntosDerrota());
+                torneo.getPuntosDerrota(), torneo.isInscripcionesJugadoresAbiertas());
         TorneoEntity saved = torneoRepo.save(entity);
         return mapToDomain(saved);
     }
@@ -44,6 +44,6 @@ public class TorneoPersistenceAdapter
     // --- Mapping Helpers ---
     private Torneo mapToDomain(TorneoEntity e) {
         return new Torneo(e.getId(), e.getNombre(), e.getEstado(), e.getMaxJugadoresPorEquipo(), e.getPuntosVictoria(),
-                e.getPuntosEmpate(), e.getPuntosDerrota());
+                e.getPuntosEmpate(), e.getPuntosDerrota(), e.isInscripcionesJugadoresAbiertas());
     }
 }

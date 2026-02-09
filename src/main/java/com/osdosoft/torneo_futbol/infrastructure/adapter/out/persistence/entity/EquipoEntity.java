@@ -4,22 +4,23 @@ import jakarta.persistence.*;
 import java.util.UUID;
 
 @Entity
-@Table(name = "equipos",
-        uniqueConstraints = @UniqueConstraint(columnNames = { "torneoId", "nombre" }))
+@Table(name = "equipos", uniqueConstraints = @UniqueConstraint(columnNames = { "torneoId", "nombre" }))
 public class EquipoEntity {
     @Id
     private UUID id;
     private String nombre;
     private String delegadoEmail;
+    private String delegadoDocumento;
     private UUID torneoId;
 
     public EquipoEntity() {
     }
 
-    public EquipoEntity(UUID id, String nombre, String delegadoEmail, UUID torneoId) {
+    public EquipoEntity(UUID id, String nombre, String delegadoEmail, String delegadoDocumento, UUID torneoId) {
         this.id = id;
         this.nombre = nombre;
         this.delegadoEmail = delegadoEmail;
+        this.delegadoDocumento = delegadoDocumento;
         this.torneoId = torneoId;
     }
 
@@ -45,6 +46,14 @@ public class EquipoEntity {
 
     public void setDelegadoEmail(String delegadoEmail) {
         this.delegadoEmail = delegadoEmail;
+    }
+
+    public String getDelegadoDocumento() {
+        return delegadoDocumento;
+    }
+
+    public void setDelegadoDocumento(String delegadoDocumento) {
+        this.delegadoDocumento = delegadoDocumento;
     }
 
     public UUID getTorneoId() {

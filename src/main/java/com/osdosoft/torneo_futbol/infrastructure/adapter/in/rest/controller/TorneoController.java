@@ -34,6 +34,7 @@ public class TorneoController {
     private final FinalizarTorneoUseCase finalizarTorneoUseCase;
     private final ObtenerTablaPosicionesUseCase obtenerTablaPosicionesUseCase;
     private final ActualizarTorneoUseCase actualizarTorneoUseCase;
+    private final com.osdosoft.torneo_futbol.domain.port.in.ControlarInscripcionesJugadoresUseCase controlarInscripcionesJugadoresUseCase;
     private final com.osdosoft.torneo_futbol.domain.port.in.AutorizacionUseCase autorizacionUseCase;
 
     public TorneoController(CrearTorneoUseCase crearTorneoUseCase,
@@ -44,6 +45,7 @@ public class TorneoController {
             FinalizarTorneoUseCase finalizarTorneoUseCase,
             ObtenerTablaPosicionesUseCase obtenerTablaPosicionesUseCase,
             ActualizarTorneoUseCase actualizarTorneoUseCase,
+            com.osdosoft.torneo_futbol.domain.port.in.ControlarInscripcionesJugadoresUseCase controlarInscripcionesJugadoresUseCase,
             com.osdosoft.torneo_futbol.domain.port.in.AutorizacionUseCase autorizacionUseCase) {
         this.crearTorneoUseCase = crearTorneoUseCase;
         this.consultarTorneoUseCase = consultarTorneoUseCase;
@@ -53,6 +55,7 @@ public class TorneoController {
         this.finalizarTorneoUseCase = finalizarTorneoUseCase;
         this.obtenerTablaPosicionesUseCase = obtenerTablaPosicionesUseCase;
         this.actualizarTorneoUseCase = actualizarTorneoUseCase;
+        this.controlarInscripcionesJugadoresUseCase = controlarInscripcionesJugadoresUseCase;
         this.autorizacionUseCase = autorizacionUseCase;
     }
 
@@ -110,6 +113,22 @@ public class TorneoController {
         return ResponseEntity.ok(mapToResponse(torneo));
     }
 
+    @PostMapping("/{id}/inscripciones-jugadores/abrir")
+    public ResponseEntity<TorneoResponse> abrirInscripcionesJugadores(@PathVariable UUID id) {
+        autorizacionUseCase
+                .validarPermiso(com.osdosoft.torneo_futbol.domain.model.enums.Permiso.TORNEO_GESTIONAR_ESTADO);
+        Torneo torneo = controlarInscripcionesJugadoresUseCase.toggleInscripcionesJugadores(id, true);
+        return ResponseEntity.ok(mapToResponse(torneo));
+    }
+
+    @PostMapping("/{id}/inscripciones-jugadores/cerrar")
+    public ResponseEntity<TorneoResponse> cerrarInscripcionesJugadores(@PathVariable UUID id) {
+        autorizacionUseCase
+                .validarPermiso(com.osdosoft.torneo_futbol.domain.model.enums.Permiso.TORNEO_GESTIONAR_ESTADO);
+        Torneo torneo = controlarInscripcionesJugadoresUseCase.toggleInscripcionesJugadores(id, false);
+        return ResponseEntity.ok(mapToResponse(torneo));
+    }
+
     @PostMapping("/{id}/sorteo")
     public ResponseEntity<Void> ejecutarSorteo(@PathVariable UUID id) {
         autorizacionUseCase
@@ -135,7 +154,8 @@ public class TorneoController {
     }
 
     private TorneoResponse mapToResponse(Torneo t) {
-        return new TorneoResponse(t.getId(), t.getNombre(), t.getEstado().name(), t.getMaxJugadoresPorEquipo());
+        return new TorneoResponse(t.getId(), t.getNombre(), t.getEstado().name(), t.getMaxJugadoresPorEquipo(),
+                t.isInscripcionesJugadoresAbiertas());
     }
 
     private PosicionTablaResponse mapPosicionTabla(PosicionTabla p) {

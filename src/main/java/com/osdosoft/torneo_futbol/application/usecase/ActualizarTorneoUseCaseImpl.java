@@ -31,7 +31,8 @@ public class ActualizarTorneoUseCaseImpl implements ActualizarTorneoUseCase {
                 maxJugadores,
                 ptsVictoria,
                 ptsEmpate,
-                ptsDerrota);
+                ptsDerrota,
+                existente.isInscripcionesJugadoresAbiertas());
 
         return torneoRepository.save(actualizado);
     }

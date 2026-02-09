@@ -7,12 +7,10 @@ import com.osdosoft.torneo_futbol.domain.port.in.RegistrarEventoUseCase;
 import com.osdosoft.torneo_futbol.domain.port.out.EventoPartidoRepositoryPort;
 import com.osdosoft.torneo_futbol.domain.port.out.MaterializadorEstadisticasPort;
 import com.osdosoft.torneo_futbol.domain.port.out.PartidoRepositoryPort;
-import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
 
-@Service
 public class RegistrarEventoUseCaseImpl implements RegistrarEventoUseCase {
 
     private final EventoPartidoRepositoryPort eventoRepository;

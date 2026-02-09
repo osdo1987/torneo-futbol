@@ -24,12 +24,14 @@ public class InscribirJugadorUseCaseImpl implements InscribirJugadorUseCase {
     }
 
     @Override
-    public Jugador inscribirJugador(UUID equipoId, String nombre, int numeroCamiseta, UUID torneoId) {
+    public Jugador inscribirJugador(UUID equipoId, String nombre, int numeroCamiseta, UUID torneoId,
+            String documentoIdentidad) {
         Torneo torneo = torneoRepository.findById(torneoId)
                 .orElseThrow(() -> new IllegalArgumentException("Torneo no encontrado"));
 
-        if (torneo.getEstado() != EstadoTorneo.INSCRIPCIONES_ABIERTAS) {
-            throw new IllegalStateException("Inscripciones cerradas");
+        // Validar si las inscripciones de jugadores están abiertas específicamente
+        if (!torneo.isInscripcionesJugadoresAbiertas() && torneo.getEstado() != EstadoTorneo.INSCRIPCIONES_ABIERTAS) {
+            throw new IllegalStateException("Las inscripciones de jugadores no están abiertas actualmente");
         }
 
         Equipo equipo = equipoRepository.findById(equipoId)
@@ -44,11 +46,17 @@ public class InscribirJugadorUseCaseImpl implements InscribirJugadorUseCase {
             throw new IllegalStateException("Maximo de jugadores alcanzado para el equipo");
         }
 
+        // Validar si el jugador ya está inscrito en algún equipo (por documento de
+        // identidad)
+        if (jugadorRepository.existsByDocumentoIdentidad(documentoIdentidad)) {
+            throw new IllegalArgumentException("El jugador con este documento ya está inscrito en un equipo");
+        }
+
         if (jugadorRepository.existsByEquipoIdAndNumeroCamiseta(equipoId, numeroCamiseta)) {
             throw new IllegalArgumentException("Numero de camiseta ya existe en el equipo");
         }
 
-        Jugador jugador = new Jugador(UUID.randomUUID(), nombre, numeroCamiseta, equipoId);
+        Jugador jugador = new Jugador(UUID.randomUUID(), nombre, numeroCamiseta, equipoId, documentoIdentidad);
         return jugadorRepository.save(jugador);
     }
 }

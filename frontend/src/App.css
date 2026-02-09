@@ -85,6 +85,16 @@
   color: white;
 }
 
+.nav-link-custom.nav-link-submenu {
+  padding-left: 2.5rem;
+  font-size: 0.9rem;
+  opacity: 0.9;
+}
+
+.nav-link-custom.nav-link-submenu:hover {
+  opacity: 1;
+}
+
 .sidebar-footer {
   margin-top: auto;
   padding-top: 1.5rem;

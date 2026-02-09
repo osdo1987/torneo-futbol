@@ -19,7 +19,7 @@ public class InscribirEquipoUseCaseImpl implements InscribirEquipoUseCase {
     }
 
     @Override
-    public Equipo inscribirEquipo(UUID torneoId, String nombreEquipo, String delegadoEmail) {
+    public Equipo inscribirEquipo(UUID torneoId, String nombreEquipo, String delegadoEmail, String delegadoDocumento) {
         Torneo torneo = torneoRepository.findById(torneoId)
                 .orElseThrow(() -> new IllegalArgumentException("Torneo no encontrado"));
 
@@ -27,7 +27,7 @@ public class InscribirEquipoUseCaseImpl implements InscribirEquipoUseCase {
             throw new IllegalStateException("Las inscripciones no estan abiertas para este torneo");
         }
 
-        Equipo equipo = new Equipo(UUID.randomUUID(), nombreEquipo, delegadoEmail, torneoId);
+        Equipo equipo = new Equipo(UUID.randomUUID(), nombreEquipo, delegadoEmail, delegadoDocumento, torneoId);
         return equipoRepository.save(equipo);
     }
 }

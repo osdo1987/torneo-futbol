@@ -25,4 +25,28 @@ public class RolEntity {
     @CollectionTable(name = "rol_permisos", joinColumns = @JoinColumn(name = "rol_id"))
     @Enumerated(EnumType.STRING)
     private Set<Permiso> permisos;
+
+    public UUID getId() {
+        return id;
+    }
+
+    public void setId(UUID id) {
+        this.id = id;
+    }
+
+    public String getNombre() {
+        return nombre;
+    }
+
+    public void setNombre(String nombre) {
+        this.nombre = nombre;
+    }
+
+    public Set<Permiso> getPermisos() {
+        return permisos;
+    }
+
+    public void setPermisos(Set<Permiso> permisos) {
+        this.permisos = permisos;
+    }
 }

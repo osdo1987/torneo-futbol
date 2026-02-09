@@ -11,6 +11,7 @@ public class Torneo {
     private final int puntosVictoria;
     private final int puntosEmpate;
     private final int puntosDerrota;
+    private boolean inscripcionesJugadoresAbiertas;
 
     public Torneo(UUID id, String nombre, int maxJugadoresPorEquipo, int puntosVictoria, int puntosEmpate,
             int puntosDerrota) {
@@ -21,10 +22,11 @@ public class Torneo {
         this.puntosEmpate = puntosEmpate;
         this.puntosDerrota = puntosDerrota;
         this.estado = EstadoTorneo.CREADO;
+        this.inscripcionesJugadoresAbiertas = false;
     }
 
     public Torneo(UUID id, String nombre, EstadoTorneo estado, int maxJugadoresPorEquipo, int puntosVictoria,
-            int puntosEmpate, int puntosDerrota) {
+            int puntosEmpate, int puntosDerrota, boolean inscripcionesJugadoresAbiertas) {
         this.id = id;
         this.nombre = nombre;
         this.estado = estado;
@@ -32,11 +34,13 @@ public class Torneo {
         this.puntosVictoria = puntosVictoria;
         this.puntosEmpate = puntosEmpate;
         this.puntosDerrota = puntosDerrota;
+        this.inscripcionesJugadoresAbiertas = inscripcionesJugadoresAbiertas;
     }
 
     public void abrirInscripciones() {
         if (this.estado != EstadoTorneo.CREADO && this.estado != EstadoTorneo.INSCRIPCIONES_CERRADAS) {
-            throw new IllegalStateException("Solo se pueden abrir inscripciones de un torneo CREADO o con inscripciones cerradas");
+            throw new IllegalStateException(
+                    "Solo se pueden abrir inscripciones de un torneo CREADO o con inscripciones cerradas");
         }
         this.estado = EstadoTorneo.INSCRIPCIONES_ABIERTAS;
     }
@@ -95,5 +99,13 @@ public class Torneo {
 
     public int getPuntosDerrota() {
         return puntosDerrota;
+    }
+
+    public boolean isInscripcionesJugadoresAbiertas() {
+        return inscripcionesJugadoresAbiertas;
+    }
+
+    public void setInscripcionesJugadoresAbiertas(boolean abierta) {
+        this.inscripcionesJugadoresAbiertas = abierta;
     }
 }

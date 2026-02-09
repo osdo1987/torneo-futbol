@@ -11,17 +11,19 @@ public class TorneoEntity {
     private UUID id;
     private String nombre;
     @Enumerated(EnumType.STRING)
+    @Column(length = 30)
     private EstadoTorneo estado;
     private int maxJugadoresPorEquipo;
     private int puntosVictoria;
     private int puntosEmpate;
     private int puntosDerrota;
+    private boolean inscripcionesJugadoresAbiertas;
 
     public TorneoEntity() {
     }
 
     public TorneoEntity(UUID id, String nombre, EstadoTorneo estado, int maxJugadores, int ptsVic, int ptsEmp,
-            int ptsDer) {
+            int ptsDer, boolean inscripcionesJugadoresAbiertas) {
         this.id = id;
         this.nombre = nombre;
         this.estado = estado;
@@ -29,6 +31,7 @@ public class TorneoEntity {
         this.puntosVictoria = ptsVic;
         this.puntosEmpate = ptsEmp;
         this.puntosDerrota = ptsDer;
+        this.inscripcionesJugadoresAbiertas = inscripcionesJugadoresAbiertas;
     }
 
     public UUID getId() {
@@ -85,5 +88,13 @@ public class TorneoEntity {
 
     public void setPuntosDerrota(int puntosDerrota) {
         this.puntosDerrota = puntosDerrota;
+    }
+
+    public boolean isInscripcionesJugadoresAbiertas() {
+        return inscripcionesJugadoresAbiertas;
+    }
+
+    public void setInscripcionesJugadoresAbiertas(boolean inscripcionesJugadoresAbiertas) {
+        this.inscripcionesJugadoresAbiertas = inscripcionesJugadoresAbiertas;
     }
 }

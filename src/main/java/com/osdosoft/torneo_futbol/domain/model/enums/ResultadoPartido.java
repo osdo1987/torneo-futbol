@@ -4,5 +4,6 @@ public enum ResultadoPartido {
     PENDIENTE,
     LOCAL_GANO,
     VISITANTE_GANO,
-    EMPATE
+    EMPATE,
+    POSTERGADO
 }

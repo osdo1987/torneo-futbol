@@ -168,7 +168,7 @@ function TorneoCard({ torneo, selectedTorneoId, onSelectTorneo, onAction, isMuta
                   disabled={!puedeAbrir || isMutating}
                   onClick={() => onAction(torneo.id, 'inscripciones/abrir')}
                 >
-                  <CheckCircle size={14} /> Abrir
+                  <CheckCircle size={14} /> Abrir Torneo
                 </Button>
                 <Button
                   size="sm"
@@ -177,7 +177,7 @@ function TorneoCard({ torneo, selectedTorneoId, onSelectTorneo, onAction, isMuta
                   disabled={!puedeCerrar || isMutating}
                   onClick={() => onAction(torneo.id, 'inscripciones/cerrar')}
                 >
-                  <LockFill size={14} /> Cerrar
+                  <LockFill size={14} /> Cerrar Torneo
                 </Button>
                 <Button
                   size="sm"
@@ -197,6 +197,26 @@ function TorneoCard({ torneo, selectedTorneoId, onSelectTorneo, onAction, isMuta
                 >
                   <XCircle size={14} /> Finalizar
                 </Button>
+              </div>
+
+              <div className="mt-3 pt-3 border-top">
+                <div className="d-flex justify-content-between align-items-center mb-2">
+                  <small className="text-muted text-uppercase fw-bold" style={{ fontSize: '0.65rem' }}>Inscripciones de Jugadores</small>
+                  <Badge bg={torneo.inscripcionesJugadoresAbiertas ? 'success' : 'secondary'} className="rounded-pill">
+                    {torneo.inscripcionesJugadoresAbiertas ? 'ABIERTAS' : 'CERRADAS'}
+                  </Badge>
+                </div>
+                <div className="d-flex gap-2">
+                  <Button
+                    size="sm"
+                    variant={torneo.inscripcionesJugadoresAbiertas ? "outline-secondary" : "outline-success"}
+                    className="flex-grow-1 py-1"
+                    disabled={isMutating}
+                    onClick={() => onAction(torneo.id, `inscripciones-jugadores/${torneo.inscripcionesJugadoresAbiertas ? 'cerrar' : 'abrir'}`)}
+                  >
+                    {torneo.inscripcionesJugadoresAbiertas ? <>Cerrar Jugadores</> : <>Abrir Jugadores</>}
+                  </Button>
+                </div>
               </div>
 
               {torneo.estado === 'EN_JUEGO' && (

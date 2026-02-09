@@ -7,11 +7,8 @@ import com.osdosoft.torneo_futbol.domain.port.out.UsuarioRepositoryPort;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.stereotype.Service;
-
 import java.util.UUID;
 
-@Service
 public class AutorizacionUseCaseImpl implements AutorizacionUseCase {
 
     private final UsuarioRepositoryPort usuarioRepository;

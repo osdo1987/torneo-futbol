@@ -22,8 +22,13 @@ public class JugadorPersistenceAdapter implements JugadorRepositoryPort {
 
     @Override
     public Jugador save(Jugador jugador) {
-        JugadorEntity entity = new JugadorEntity(jugador.getId(), jugador.getNombre(), jugador.getNumeroCamiseta(),
-                jugador.getEquipoId());
+        JugadorEntity entity = new JugadorEntity(
+                jugador.getId(),
+                jugador.getNombre(),
+                jugador.getNumeroCamiseta(),
+                jugador.getEquipoId(),
+                jugador.getDocumentoIdentidad(),
+                jugador.isActivo());
         jugadorRepo.save(entity);
         return jugador;
     }
@@ -31,23 +36,30 @@ public class JugadorPersistenceAdapter implements JugadorRepositoryPort {
     @Override
     public Optional<Jugador> findByJugadorId(UUID id) {
         return jugadorRepo.findById(id)
-                .map(e -> new Jugador(e.getId(), e.getNombre(), e.getNumeroCamiseta(), e.getEquipoId()));
+                .map(e -> new Jugador(e.getId(), e.getNombre(), e.getNumeroCamiseta(), e.getEquipoId(),
+                        e.getDocumentoIdentidad(), e.isActivo(), null));
     }
 
     @Override
     public List<Jugador> findByEquipoId(UUID equipoId) {
         return jugadorRepo.findByEquipoId(equipoId).stream()
-                .map(e -> new Jugador(e.getId(), e.getNombre(), e.getNumeroCamiseta(), e.getEquipoId()))
+                .map(e -> new Jugador(e.getId(), e.getNombre(), e.getNumeroCamiseta(), e.getEquipoId(),
+                        e.getDocumentoIdentidad(), e.isActivo(), null))
                 .collect(Collectors.toList());
     }
 
     @Override
     public int countByEquipoId(UUID equipoId) {
-        return jugadorRepo.countByEquipoId(equipoId);
+        return jugadorRepo.countByEquipoIdAndActivoTrue(equipoId);
     }
 
     @Override
     public boolean existsByEquipoIdAndNumeroCamiseta(UUID equipoId, int numeroCamiseta) {
-        return jugadorRepo.existsByEquipoIdAndNumeroCamiseta(equipoId, numeroCamiseta);
+        return jugadorRepo.existsByEquipoIdAndNumeroCamisetaAndActivoTrue(equipoId, numeroCamiseta);
+    }
+
+    @Override
+    public boolean existsByDocumentoIdentidad(String documentoIdentidad) {
+        return jugadorRepo.existsByDocumentoIdentidadAndActivoTrue(documentoIdentidad);
     }
 }

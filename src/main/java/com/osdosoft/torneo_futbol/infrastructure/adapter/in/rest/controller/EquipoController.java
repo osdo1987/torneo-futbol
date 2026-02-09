@@ -24,15 +24,18 @@ public class EquipoController {
     private final InscribirEquipoUseCase inscribirEquipoUseCase;
     private final InscribirJugadorUseCase inscribirJugadorUseCase;
     private final ConsultarEquiposUseCase consultarEquiposUseCase;
+    private final com.osdosoft.torneo_futbol.domain.port.in.LiberarJugadorUseCase liberarJugadorUseCase;
     private final com.osdosoft.torneo_futbol.domain.port.in.AutorizacionUseCase autorizacionUseCase;
 
     public EquipoController(InscribirEquipoUseCase inscribirEquipoUseCase,
             InscribirJugadorUseCase inscribirJugadorUseCase,
             ConsultarEquiposUseCase consultarEquiposUseCase,
+            com.osdosoft.torneo_futbol.domain.port.in.LiberarJugadorUseCase liberarJugadorUseCase,
             com.osdosoft.torneo_futbol.domain.port.in.AutorizacionUseCase autorizacionUseCase) {
         this.inscribirEquipoUseCase = inscribirEquipoUseCase;
         this.inscribirJugadorUseCase = inscribirJugadorUseCase;
         this.consultarEquiposUseCase = consultarEquiposUseCase;
+        this.liberarJugadorUseCase = liberarJugadorUseCase;
         this.autorizacionUseCase = autorizacionUseCase;
     }
 
@@ -56,7 +59,8 @@ public class EquipoController {
     public ResponseEntity<EquipoResponse> inscribirEquipo(@PathVariable UUID torneoId,
             @Valid @RequestBody EquipoRequest request) {
         autorizacionUseCase.validarPermiso(com.osdosoft.torneo_futbol.domain.model.enums.Permiso.EQUIPO_INSCRIBIR);
-        Equipo equipo = inscribirEquipoUseCase.inscribirEquipo(torneoId, request.nombre(), request.delegadoEmail());
+        Equipo equipo = inscribirEquipoUseCase.inscribirEquipo(torneoId, request.nombre(), request.delegadoEmail(),
+                request.delegadoDocumento());
         return ResponseEntity.ok(mapEquipoResponse(equipo));
     }
 
@@ -69,16 +73,28 @@ public class EquipoController {
                 .validarPermiso(com.osdosoft.torneo_futbol.domain.model.enums.Permiso.EQUIPO_GESTIONAR_MI_PLANTILLA);
         autorizacionUseCase.validarPropiedadEquipo(equipoId);
         Jugador jugador = inscribirJugadorUseCase.inscribirJugador(equipoId, request.nombre(), request.numeroCamiseta(),
-                torneoId);
+                torneoId, request.documentoIdentidad());
+        return ResponseEntity.ok(mapJugadorResponse(jugador));
+    }
+
+    @PutMapping("/{equipoId}/jugadores/{jugadorId}/liberar")
+    public ResponseEntity<JugadorResponse> liberarJugador(
+            @PathVariable UUID equipoId,
+            @PathVariable UUID jugadorId) {
+        autorizacionUseCase
+                .validarPermiso(com.osdosoft.torneo_futbol.domain.model.enums.Permiso.EQUIPO_GESTIONAR_MI_PLANTILLA);
+        autorizacionUseCase.validarPropiedadEquipo(equipoId);
+        Jugador jugador = liberarJugadorUseCase.liberarJugador(jugadorId);
         return ResponseEntity.ok(mapJugadorResponse(jugador));
     }
 
     private EquipoResponse mapEquipoResponse(Equipo equipo) {
-        return new EquipoResponse(equipo.getId(), equipo.getNombre(), equipo.getDelegadoEmail(), equipo.getTorneoId());
+        return new EquipoResponse(equipo.getId(), equipo.getNombre(), equipo.getDelegadoEmail(),
+                equipo.getDelegadoDocumento(), equipo.getTorneoId());
     }
 
     private JugadorResponse mapJugadorResponse(Jugador jugador) {
         return new JugadorResponse(jugador.getId(), jugador.getNombre(), jugador.getNumeroCamiseta(),
-                jugador.getEquipoId());
+                jugador.getEquipoId(), jugador.getDocumentoIdentidad(), jugador.isActivo());
     }
 }

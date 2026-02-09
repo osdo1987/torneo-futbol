@@ -22,7 +22,11 @@ public class EquipoPersistenceAdapter implements EquipoRepositoryPort {
 
     @Override
     public Equipo save(Equipo equipo) {
-        EquipoEntity entity = new EquipoEntity(equipo.getId(), equipo.getNombre(), equipo.getDelegadoEmail(),
+        EquipoEntity entity = new EquipoEntity(
+                equipo.getId(),
+                equipo.getNombre(),
+                equipo.getDelegadoEmail(),
+                equipo.getDelegadoDocumento(),
                 equipo.getTorneoId());
         equipoRepo.save(entity);
         return equipo;
@@ -31,13 +35,15 @@ public class EquipoPersistenceAdapter implements EquipoRepositoryPort {
     @Override
     public Optional<Equipo> findById(UUID id) {
         return equipoRepo.findById(id)
-                .map(e -> new Equipo(e.getId(), e.getNombre(), e.getDelegadoEmail(), e.getTorneoId()));
+                .map(e -> new Equipo(e.getId(), e.getNombre(), e.getDelegadoEmail(), e.getDelegadoDocumento(),
+                        e.getTorneoId()));
     }
 
     @Override
     public List<Equipo> findByTorneoId(UUID torneoId) {
         return equipoRepo.findByTorneoId(torneoId).stream()
-                .map(e -> new Equipo(e.getId(), e.getNombre(), e.getDelegadoEmail(), e.getTorneoId()))
+                .map(e -> new Equipo(e.getId(), e.getNombre(), e.getDelegadoEmail(), e.getDelegadoDocumento(),
+                        e.getTorneoId()))
                 .collect(Collectors.toList());
     }
 }

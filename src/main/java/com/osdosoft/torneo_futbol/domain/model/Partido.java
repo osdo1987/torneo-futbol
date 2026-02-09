@@ -43,10 +43,21 @@ public class Partido {
         if (fecha == null) {
             throw new IllegalArgumentException("La fecha es obligatoria");
         }
-        if (this.resultado != ResultadoPartido.PENDIENTE) {
-            throw new IllegalStateException("No se puede programar un partido con resultado registrado");
+        if (this.resultado != ResultadoPartido.PENDIENTE && this.resultado != ResultadoPartido.POSTERGADO) {
+            throw new IllegalStateException("No se puede programar un partido finalizado");
         }
         this.fechaProgramada = fecha;
+        // Si estaba postergado y se reprograma, vuelve a estar pendiente de resultado
+        if (this.resultado == ResultadoPartido.POSTERGADO) {
+            this.resultado = ResultadoPartido.PENDIENTE;
+        }
+    }
+
+    public void aplazar() {
+        if (this.resultado != ResultadoPartido.PENDIENTE) {
+            throw new IllegalStateException("Solo se pueden aplazar partidos pendientes");
+        }
+        this.resultado = ResultadoPartido.POSTERGADO;
     }
 
     public void registrarMarcador(int golesLocal, int golesVisitante) {
@@ -65,6 +76,15 @@ public class Partido {
         } else {
             this.resultado = ResultadoPartido.EMPATE;
         }
+    }
+
+    public void actualizarGoles(int golesLocal, int golesVisitante) {
+        if (this.resultado != ResultadoPartido.PENDIENTE) {
+            throw new IllegalStateException(
+                    "Solo se puede actualizar el marcador en tiempo real si el partido está pendiente");
+        }
+        this.golesLocal = golesLocal;
+        this.golesVisitante = golesVisitante;
     }
 
     public UUID getId() {

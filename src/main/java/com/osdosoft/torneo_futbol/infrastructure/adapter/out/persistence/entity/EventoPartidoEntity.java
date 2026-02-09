@@ -12,6 +12,7 @@ public class EventoPartidoEntity {
     private UUID partidoId;
     private UUID jugadorId;
     @Enumerated(EnumType.STRING)
+    @Column(length = 30)
     private TipoEventoPartido tipo;
     private int minuto;
     private String descripcion;

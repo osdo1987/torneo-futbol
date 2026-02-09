@@ -10,7 +10,8 @@ import {
   TrophyFill,
   BarChart,
   BoxArrowRight,
-  PersonCircle
+  PersonCircle,
+  Clock
 } from 'react-bootstrap-icons'
 
 export default function Sidebar({ torneos = [], selectedTorneoId, onSelectTorneo, user, onLogout }) {
@@ -52,20 +53,32 @@ export default function Sidebar({ torneos = [], selectedTorneoId, onSelectTorneo
           <span>Dashboard</span>
         </NavLink>
 
-        <NavLink to="/torneos" className={({ isActive }) => `nav-link-custom ${isActive ? 'active' : ''}`}>
-          <Trophy size={18} />
-          <span>Torneos</span>
-        </NavLink>
+        {user?.rol === 'ORGANIZADOR' && (
+          <NavLink to="/torneos" className={({ isActive }) => `nav-link-custom ${isActive ? 'active' : ''}`}>
+            <Trophy size={18} />
+            <span>Torneos</span>
+          </NavLink>
+        )}
 
-        <NavLink to="/equipos" className={({ isActive }) => `nav-link-custom ${isActive ? 'active' : ''}`}>
-          <People size={18} />
-          <span>Equipos</span>
-        </NavLink>
+        {(user?.rol === 'ORGANIZADOR' || user?.rol === 'DELEGADO') && (
+          <NavLink to="/equipos" className={({ isActive }) => `nav-link-custom ${isActive ? 'active' : ''}`}>
+            <People size={18} />
+            <span>Equipos</span>
+          </NavLink>
+        )}
 
-        <NavLink to="/partidos" className={({ isActive }) => `nav-link-custom ${isActive ? 'active' : ''}`}>
-          <CalendarEvent size={18} />
-          <span>Partidos</span>
-        </NavLink>
+        {(user?.rol === 'ORGANIZADOR' || user?.rol === 'ARBITRO') && (
+          <>
+            <NavLink to="/partidos" className={({ isActive }) => `nav-link-custom ${isActive ? 'active' : ''}`}>
+              <CalendarEvent size={18} />
+              <span>Partidos</span>
+            </NavLink>
+            <NavLink to="/control-en-vivo" className={({ isActive }) => `nav-link-custom nav-link-submenu ${isActive ? 'active' : ''}`}>
+              <Clock size={16} />
+              <span>Control en Vivo</span>
+            </NavLink>
+          </>
+        )}
 
         <NavLink to="/tabla" className={({ isActive }) => `nav-link-custom ${isActive ? 'active' : ''}`}>
           <Table size={18} />
@@ -77,15 +90,17 @@ export default function Sidebar({ torneos = [], selectedTorneoId, onSelectTorneo
           <span>Estadísticas</span>
         </NavLink>
 
-        <div className="mt-4">
-          <small className="text-muted text-uppercase fw-bold mb-2 d-block" style={{ fontSize: '0.65rem', letterSpacing: '0.05em' }}>
-            Sistema
-          </small>
-          <NavLink to="/config" className={({ isActive }) => `nav-link-custom ${isActive ? 'active' : ''}`}>
-            <Gear size={18} />
-            <span>Configuración</span>
-          </NavLink>
-        </div>
+        {user?.rol === 'ORGANIZADOR' && (
+          <div className="mt-4">
+            <small className="text-muted text-uppercase fw-bold mb-2 d-block" style={{ fontSize: '0.65rem', letterSpacing: '0.05em' }}>
+              Sistema
+            </small>
+            <NavLink to="/config" className={({ isActive }) => `nav-link-custom ${isActive ? 'active' : ''}`}>
+              <Gear size={18} />
+              <span>Configuración</span>
+            </NavLink>
+          </div>
+        )}
       </nav>
 
       <div className="sidebar-footer border-top border-secondary border-opacity-10 pt-4">

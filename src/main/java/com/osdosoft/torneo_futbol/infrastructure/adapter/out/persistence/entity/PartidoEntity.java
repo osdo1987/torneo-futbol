@@ -17,6 +17,7 @@ public class PartidoEntity {
     private int golesLocal;
     private int golesVisitante;
     @Enumerated(EnumType.STRING)
+    @Column(length = 30)
     private ResultadoPartido resultado;
     private int jornada;
 

@@ -13,10 +13,10 @@ import {
   Badge,
 } from 'react-bootstrap'
 import { People, Plus, PersonPlus, ShieldFill, Envelope, PersonBadgeFill } from 'react-bootstrap-icons'
-import { apiGet, apiPost } from '../api'
+import { apiGet, apiPost, apiPut } from '../api'
 
-const initialEquipoForm = { nombre: '', delegadoEmail: '' }
-const initialJugadorForm = { nombre: '', numeroCamiseta: 10, posicion: 'DELANTERO', altura: '', peso: '' }
+const initialEquipoForm = { nombre: '', delegadoEmail: '', delegadoDocumento: '' }
+const initialJugadorForm = { nombre: '', numeroCamiseta: 10, documentoIdentidad: '', posicion: 'DELANTERO', altura: '', peso: '' }
 
 function JugadoresPanel({ torneoId, equipo }) {
   const queryClient = useQueryClient()
@@ -37,17 +37,19 @@ function JugadoresPanel({ torneoId, equipo }) {
 
   const filteredJugadores = jugadores.filter(j => {
     const matchesSearch = j.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      j.numeroCamiseta.toString().includes(searchTerm)
+      j.numeroCamiseta.toString().includes(searchTerm) ||
+      j.documentoIdentidad?.includes(searchTerm)
     const matchesPos = filterPosicion === 'TODAS' || (j.atributosAdicionales?.posicion === filterPosicion)
     return matchesSearch && matchesPos
   })
 
   const mutation = useMutation({
     mutationFn: (newJugador) => {
-      const { nombre, numeroCamiseta, ...extras } = newJugador;
+      const { nombre, numeroCamiseta, documentoIdentidad, ...extras } = newJugador;
       return apiPost(`/torneos/${torneoId}/equipos/${equipo.id}/jugadores`, {
         nombre,
         numeroCamiseta,
+        documentoIdentidad,
         atributosAdicionales: extras
       });
     },
@@ -57,9 +59,22 @@ function JugadoresPanel({ torneoId, equipo }) {
     },
   })
 
+  const releaseMutation = useMutation({
+    mutationFn: (jugadorId) => apiPut(`/torneos/${torneoId}/equipos/${equipo.id}/jugadores/${jugadorId}/liberar`),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['jugadores', torneoId, equipo.id])
+    }
+  })
+
   const handleSubmit = (e) => {
     e.preventDefault()
     mutation.mutate(form)
+  }
+
+  const handleRelease = (jugadorId) => {
+    if (window.confirm('¿Estás seguro de que deseas liberar a este jugador? Esto permitirá inscribir a alguien más en su lugar.')) {
+      releaseMutation.mutate(jugadorId)
+    }
   }
 
   return (
@@ -72,7 +87,7 @@ function JugadoresPanel({ torneoId, equipo }) {
           <h5 className="mb-0 fw-bold">Jugadores de {equipo.nombre}</h5>
         </div>
         <Badge pill bg="primary" className="px-3 py-2 fw-semibold">
-          {jugadores.length} Inscritos
+          {jugadores.filter(j => j.activo).length} Inscritos
         </Badge>
       </Card.Header>
 
@@ -81,7 +96,7 @@ function JugadoresPanel({ torneoId, equipo }) {
         <div className="mb-4 d-flex gap-2">
           <div className="position-relative flex-grow-1">
             <Form.Control
-              placeholder="Buscar por nombre o dorsal..."
+              placeholder="Buscar por nombre, dorsal o documento..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="bg-light border-0 py-2 ps-4 shadow-none"
@@ -107,7 +122,7 @@ function JugadoresPanel({ torneoId, equipo }) {
           </h6>
           <Form onSubmit={handleSubmit}>
             <Row className="g-3">
-              <Col md={5}>
+              <Col md={4}>
                 <Form.Group>
                   <Form.Label className="small fw-bold text-muted text-uppercase">Nombre Completo</Form.Label>
                   <Form.Control
@@ -115,6 +130,19 @@ function JugadoresPanel({ torneoId, equipo }) {
                     placeholder="Ej: Juan Pérez"
                     value={form.nombre}
                     onChange={(e) => setForm({ ...form, nombre: e.target.value })}
+                    className="border-0 shadow-none py-2"
+                    required
+                  />
+                </Form.Group>
+              </Col>
+              <Col md={3}>
+                <Form.Group>
+                  <Form.Label className="small fw-bold text-muted text-uppercase">Documento Identidad</Form.Label>
+                  <Form.Control
+                    type="text"
+                    placeholder="ID / DNI"
+                    value={form.documentoIdentidad}
+                    onChange={(e) => setForm({ ...form, documentoIdentidad: e.target.value })}
                     className="border-0 shadow-none py-2"
                     required
                   />
@@ -149,14 +177,9 @@ function JugadoresPanel({ torneoId, equipo }) {
                   </Form.Select>
                 </Form.Group>
               </Col>
-              <Col md={2} className="d-flex align-items-end">
-                <Button variant="primary" type="submit" className="w-100 py-2 fw-bold" disabled={mutation.isPending}>
-                  {mutation.isPending ? <Spinner size="sm" /> : 'Inscribir'}
-                </Button>
-              </Col>
             </Row>
 
-            <Row className="g-3 mt-1">
+            <Row className="g-3 mt-1 align-items-end">
               <Col md={3}>
                 <Form.Group>
                   <Form.Label className="small fw-bold text-muted text-uppercase">Altura (cm)</Form.Label>
@@ -182,9 +205,9 @@ function JugadoresPanel({ torneoId, equipo }) {
                 </Form.Group>
               </Col>
               <Col md={6}>
-                <Form.Text className="text-muted small mt-4 d-block">
-                  * La ficha técnica permite filtros avanzados en futuras versiones de scouteo.
-                </Form.Text>
+                <Button variant="primary" type="submit" className="w-100 py-2 fw-bold" disabled={mutation.isPending}>
+                  {mutation.isPending ? <Spinner size="sm" /> : 'Inscribir Jugador'}
+                </Button>
               </Col>
             </Row>
 
@@ -208,18 +231,39 @@ function JugadoresPanel({ torneoId, equipo }) {
             )}
             {filteredJugadores.map((j) => (
               <Col md={6} key={j.id}>
-                <div className="p-3 border rounded-3 bg-white hover-shadow transition-all border-start-4 border-start-primary">
+                <div className={`p-3 border rounded-3 bg-white hover-shadow transition-all border-start-4 ${j.activo ? 'border-start-primary' : 'border-start-secondary grayscale'}`}>
                   <div className="d-flex align-items-center justify-content-between mb-2">
                     <div className="d-flex align-items-center gap-3">
-                      <div className="bg-primary text-white fw-bold rounded-circle d-flex align-items-center justify-content-center shadow-sm" style={{ width: 40, height: 40 }}>
+                      <div className={`${j.activo ? 'bg-primary' : 'bg-secondary'} text-white fw-bold rounded-circle d-flex align-items-center justify-content-center shadow-sm`} style={{ width: 40, height: 40 }}>
                         {j.numeroCamiseta}
                       </div>
                       <div>
-                        <h6 className="mb-0 fw-bold">{j.nombre}</h6>
-                        <Badge bg="light" text="primary" className="small border">{j.atributosAdicionales?.posicion || 'JUGADOR'}</Badge>
+                        <h6 className={`mb-0 fw-bold ${!j.activo ? 'text-muted text-decoration-line-through' : ''}`}>{j.nombre}</h6>
+                        <div className="d-flex gap-2 align-items-center">
+                          <Badge bg="light" text="primary" className="small border">{j.atributosAdicionales?.posicion || 'JUGADOR'}</Badge>
+                          <small className="text-muted" style={{ fontSize: '0.7rem' }}>{j.documentoIdentidad}</small>
+                        </div>
                       </div>
                     </div>
-                    <Badge bg="success" className="rounded-pill px-2" style={{ fontSize: '0.6rem' }}>ACTIVO</Badge>
+                    <div className="d-flex flex-column align-items-end gap-2">
+                      {j.activo ? (
+                        <>
+                          <Badge bg="success" className="rounded-pill px-2" style={{ fontSize: '0.6rem' }}>ACTIVO</Badge>
+                          <Button
+                            variant="outline-danger"
+                            size="sm"
+                            className="btn-xs py-0 px-2"
+                            style={{ fontSize: '0.7rem' }}
+                            onClick={() => handleRelease(j.id)}
+                            disabled={releaseMutation.isPending}
+                          >
+                            Liberar
+                          </Button>
+                        </>
+                      ) : (
+                        <Badge bg="secondary" className="rounded-pill px-2" style={{ fontSize: '0.6rem' }}>LIBERADO</Badge>
+                      )}
+                    </div>
                   </div>
                   <div className="d-flex gap-3 mt-2 border-top pt-2">
                     <div className="small text-muted">H: <strong>{j.atributosAdicionales?.altura || '--'} cm</strong></div>
@@ -335,6 +379,9 @@ export default function EquiposPage({ selectedTorneoId }) {
                       <small className={`d-flex align-items-center gap-1 text-truncate ${e.id === selectedEquipoId ? 'text-white text-opacity-75' : 'text-muted'}`}>
                         <Envelope size={10} /> {e.delegadoEmail}
                       </small>
+                      <small className={`d-block text-truncate ${e.id === selectedEquipoId ? 'text-white text-opacity-50' : 'text-muted'}`} style={{ fontSize: '0.7rem' }}>
+                        ID: {e.delegadoDocumento}
+                      </small>
                     </div>
                   </ListGroup.Item>
                 ))}
@@ -372,13 +419,24 @@ export default function EquiposPage({ selectedTorneoId }) {
                 required
               />
             </Form.Group>
-            <Form.Group className="mb-4">
+            <Form.Group className="mb-3">
               <Form.Label className="small fw-bold text-muted text-uppercase">Correo del Delegado</Form.Label>
               <Form.Control
                 type="email"
                 placeholder="contacto@equipo.com"
                 value={form.delegadoEmail}
                 onChange={(e) => setForm({ ...form, delegadoEmail: e.target.value })}
+                className="bg-light border-0 py-2 shadow-none"
+                required
+              />
+            </Form.Group>
+            <Form.Group className="mb-4">
+              <Form.Label className="small fw-bold text-muted text-uppercase">Documento del Delegado</Form.Label>
+              <Form.Control
+                type="text"
+                placeholder="ID / DNI"
+                value={form.delegadoDocumento}
+                onChange={(e) => setForm({ ...form, delegadoDocumento: e.target.value })}
                 className="bg-light border-0 py-2 shadow-none"
                 required
               />

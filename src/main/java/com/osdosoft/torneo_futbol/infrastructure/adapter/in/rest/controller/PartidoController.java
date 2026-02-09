@@ -29,6 +29,8 @@ public class PartidoController {
         private final ProgramarPartidoUseCase programarPartidoUseCase;
         private final RegistrarEventoUseCase registrarEventoUseCase;
         private final ConsultarEventosUseCase consultarEventosUseCase;
+        private final com.osdosoft.torneo_futbol.domain.port.in.AplazarPartidoUseCase aplazarPartidoUseCase;
+        private final com.osdosoft.torneo_futbol.domain.port.in.ActualizarMarcadorRealTimeUseCase actualizarMarcadorRealTimeUseCase;
         private final AutorizacionUseCase autorizacionUseCase;
 
         public PartidoController(RegistrarResultadoUseCase registrarResultadoUseCase,
@@ -36,12 +38,16 @@ public class PartidoController {
                         ProgramarPartidoUseCase programarPartidoUseCase,
                         RegistrarEventoUseCase registrarEventoUseCase,
                         ConsultarEventosUseCase consultarEventosUseCase,
+                        com.osdosoft.torneo_futbol.domain.port.in.AplazarPartidoUseCase aplazarPartidoUseCase,
+                        com.osdosoft.torneo_futbol.domain.port.in.ActualizarMarcadorRealTimeUseCase actualizarMarcadorRealTimeUseCase,
                         AutorizacionUseCase autorizacionUseCase) {
                 this.registrarResultadoUseCase = registrarResultadoUseCase;
                 this.consultarTorneoUseCase = consultarTorneoUseCase;
                 this.programarPartidoUseCase = programarPartidoUseCase;
                 this.registrarEventoUseCase = registrarEventoUseCase;
                 this.consultarEventosUseCase = consultarEventosUseCase;
+                this.aplazarPartidoUseCase = aplazarPartidoUseCase;
+                this.actualizarMarcadorRealTimeUseCase = actualizarMarcadorRealTimeUseCase;
                 this.autorizacionUseCase = autorizacionUseCase;
         }
 
@@ -89,6 +95,23 @@ public class PartidoController {
                         @Valid @RequestBody ProgramarPartidoRequest request) {
                 autorizacionUseCase.validarPermiso(Permiso.PARTIDO_PROGRAMAR);
                 Partido partido = programarPartidoUseCase.programarPartido(partidoId, request.fechaProgramada());
+                return ResponseEntity.ok(mapPartidoResponse(partido));
+        }
+
+        @PutMapping("/{partidoId}/aplazar")
+        public ResponseEntity<PartidoResponse> aplazarPartido(@PathVariable UUID partidoId) {
+                autorizacionUseCase.validarPermiso(Permiso.PARTIDO_PROGRAMAR); // Usamos el mismo permiso por ahora
+                Partido partido = aplazarPartidoUseCase.aplazarPartido(partidoId);
+                return ResponseEntity.ok(mapPartidoResponse(partido));
+        }
+
+        @PutMapping("/{partidoId}/marcador-realtime")
+        public ResponseEntity<PartidoResponse> actualizarMarcadorRealTime(@PathVariable UUID partidoId,
+                        @Valid @RequestBody ResultadoRequest request) {
+                autorizacionUseCase.validarPermiso(Permiso.PARTIDO_REGISTRAR_EVENTO); // Árbitros pueden registrar
+                                                                                      // eventos
+                Partido partido = actualizarMarcadorRealTimeUseCase.actualizarMarcador(partidoId, request.golesLocal(),
+                                request.golesVisitante());
                 return ResponseEntity.ok(mapPartidoResponse(partido));
         }
 

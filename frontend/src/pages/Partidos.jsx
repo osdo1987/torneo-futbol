@@ -19,7 +19,7 @@ export default function PartidosPage({ selectedTorneoId }) {
   const [expandedPartidoId, setExpandedPartidoId] = useState(null)
 
   const {
-    data: partidos = [],
+    data: matches = [],
     isLoading: loadingPartidos,
     isError: isErrorPartidos,
     error: errorPartidos,
@@ -28,6 +28,9 @@ export default function PartidosPage({ selectedTorneoId }) {
     queryFn: () => apiGet(`/partidos/torneo/${selectedTorneoId}`),
     enabled: !!selectedTorneoId,
   })
+
+  // Normalize data for local use
+  const partidos = matches;
 
   const {
     data: equipos = [],
@@ -56,6 +59,21 @@ export default function PartidosPage({ selectedTorneoId }) {
       queryClient.invalidateQueries(['partidos', selectedTorneoId])
       setProgramarForm(initialProgramarForm)
     },
+  })
+
+  const postponeMutation = useMutation({
+    mutationFn: (partidoId) => apiPut(`/partidos/${partidoId}/aplazar`),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['partidos', selectedTorneoId])
+    }
+  })
+
+  const marcadorRealTimeMutation = useMutation({
+    mutationFn: ({ partidoId, golesLocal, golesVisitante }) =>
+      apiPut(`/partidos/${partidoId}/marcador-realtime`, { golesLocal, golesVisitante }),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['partidos', selectedTorneoId])
+    }
   })
 
   const resultadoMutation = useMutation({
@@ -102,6 +120,16 @@ export default function PartidosPage({ selectedTorneoId }) {
     resultadoMutation.mutate(resultadoForm)
   }
 
+  const handlePostpone = (id) => {
+    if (window.confirm('¿Estás seguro de que deseas aplazar este encuentro?')) {
+      postponeMutation.mutate(id)
+    }
+  }
+
+  const handleRealTimeUpdate = (partidoId, gl, gv) => {
+    marcadorRealTimeMutation.mutate({ partidoId, golesLocal: gl, golesVisitante: gv })
+  }
+
   const {
     data: jugadoresPartido = [],
   } = useQuery({
@@ -120,9 +148,10 @@ export default function PartidosPage({ selectedTorneoId }) {
   const getStatusBadge = (status) => {
     switch (status) {
       case 'PENDIENTE': return <Badge bg="light" text="dark" className="border shadow-none py-2 px-3">Pendiente</Badge>
-      case 'LOCAL_GANO': return <Badge bg="primary" className="py-2 px-3 shadow-sm">Galt. Local</Badge>
-      case 'VISITANTE_GANO': return <Badge bg="primary" className="py-2 px-3 shadow-sm">Galt. Vis.</Badge>
+      case 'LOCAL_GANO': return <Badge bg="primary" className="py-2 px-3 shadow-sm">Ganó Local</Badge>
+      case 'VISITANTE_GANO': return <Badge bg="primary" className="py-2 px-3 shadow-sm">Ganó Vis.</Badge>
       case 'EMPATE': return <Badge bg="info" className="py-2 px-3 shadow-sm">Empate</Badge>
+      case 'POSTERGADO': return <Badge bg="warning" text="dark" className="py-2 px-3 shadow-sm">Postergado</Badge>
       default: return <Badge bg="secondary" className="py-2 px-3">Finalizado</Badge>
     }
   }
@@ -194,9 +223,9 @@ export default function PartidosPage({ selectedTorneoId }) {
                       className="border-0 shadow-none py-2"
                     >
                       <option value="">Seleccionar encuentro...</option>
-                      {partidos.filter(p => !p.fechaProgramada).map((p) => (
+                      {partidos.filter(p => !p.fechaProgramada || p.resultado === 'POSTERGADO').map((p) => (
                         <option key={p.id} value={p.id}>
-                          J{p.jornada}: {equiposById.get(p.equipoLocalId) || 'Eq 1'} vs {equiposById.get(p.equipoVisitanteId) || 'Eq 2'}
+                          J{p.jornada}: {equiposById.get(p.equipoLocalId) || 'Eq 1'} vs {equiposById.get(p.equipoVisitanteId) || 'Eq 2'} {p.resultado === 'POSTERGADO' ? '(Reprogramar)' : ''}
                         </option>
                       ))}
                     </Form.Select>
@@ -367,7 +396,19 @@ export default function PartidosPage({ selectedTorneoId }) {
                       </td>
                       <td className="pe-4 text-end">
                         <div className="d-flex justify-content-end align-items-center gap-2">
-                          {p.resultado !== 'PENDIENTE' && (
+                          {p.resultado === 'PENDIENTE' && (
+                            <Button
+                              variant="outline-warning"
+                              size="sm"
+                              onClick={() => handlePostpone(p.id)}
+                              title="Aplazar Partido"
+                              className="rounded-pill px-2 shadow-sm d-flex align-items-center gap-1"
+                              disabled={postponeMutation.isPending}
+                            >
+                              <Clock size={12} /> <span className="small fw-bold">Aplazar</span>
+                            </Button>
+                          )}
+                          {p.resultado !== 'PENDIENTE' && p.resultado !== 'POSTERGADO' && (
                             <Button
                               variant="primary"
                               size="sm"
@@ -386,6 +427,36 @@ export default function PartidosPage({ selectedTorneoId }) {
                       <tr className="bg-light border-top-0">
                         <td colSpan="5" className="pb-4 px-5">
                           <div className="bg-white rounded-4 shadow-sm p-4 animate-slide-down">
+                            {p.resultado === 'PENDIENTE' && (
+                              <div className="mb-4 p-3 bg-primary bg-opacity-10 rounded-3 d-flex justify-content-between align-items-center">
+                                <div>
+                                  <h6 className="fw-bold mb-1">Control de Marcador Real-Time</h6>
+                                  <small className="text-muted">Actualiza goles sin cerrar el acta oficial.</small>
+                                </div>
+                                <div className="d-flex align-items-center gap-3">
+                                  <div className="text-center">
+                                    <small className="d-block text-uppercase fw-bold text-muted" style={{ fontSize: '0.6rem' }}>Local</small>
+                                    <div className="d-flex align-items-center gap-1">
+                                      <Button size="sm" variant="light" className="py-0 px-2" onClick={() => handleRealTimeUpdate(p.id, Math.max(0, p.golesLocal - 1), p.golesVisitante)}>-</Button>
+                                      <span className="fw-bold mx-2">{p.golesLocal}</span>
+                                      <Button size="sm" variant="light" className="py-0 px-2" onClick={() => handleRealTimeUpdate(p.id, p.golesLocal + 1, p.golesVisitante)}>+</Button>
+                                    </div>
+                                  </div>
+                                  <div className="vr"></div>
+                                  <div className="text-center">
+                                    <small className="d-block text-uppercase fw-bold text-muted" style={{ fontSize: '0.6rem' }}>Vis.</small>
+                                    <div className="d-flex align-items-center gap-1">
+                                      <Button size="sm" variant="light" className="py-0 px-2" onClick={() => handleRealTimeUpdate(p.id, p.golesLocal, Math.max(0, p.golesVisitante - 1))}>-</Button>
+                                      <span className="fw-bold mx-2">{p.golesVisitante}</span>
+                                      <Button size="sm" variant="light" className="py-0 px-2" onClick={() => handleRealTimeUpdate(p.id, p.golesLocal, p.golesVisitante + 1)}>+</Button>
+                                    </div>
+                                  </div>
+                                  <Button variant="primary" size="sm" className="ms-3" onClick={() => openEventoModal(p)}>
+                                    <Balloon className="me-1" /> Evento
+                                  </Button>
+                                </div>
+                              </div>
+                            )}
                             <h6 className="fw-bold text-muted small text-uppercase mb-3 d-flex align-items-center gap-2">
                               <ListTask /> Eventos Cronológicos
                             </h6>
