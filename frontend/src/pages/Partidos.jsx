@@ -1,11 +1,12 @@
 ﻿import { useMemo, useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Alert, Spinner, Card, Row, Col, Form, Button, Table, Badge } from 'react-bootstrap'
-import { Calendar2Event, Trophy, Clock, Filter, CheckCircleFill, DashCircleFill } from 'react-bootstrap-icons'
-import { apiGet, apiPut } from '../api'
+import { Alert, Spinner, Card, Row, Col, Form, Button, Table, Badge, Modal } from 'react-bootstrap'
+import { Calendar2Event, Trophy, Clock, Filter, CheckCircleFill, DashCircleFill, PlusCircle } from 'react-bootstrap-icons'
+import { apiGet, apiPut, apiPost } from '../api'
 
 const initialProgramarForm = { partidoId: '', fechaProgramada: '' }
 const initialResultadoForm = { partidoId: '', golesLocal: 0, golesVisitante: 0 }
+const initialEventoForm = { jugadorId: '', tipo: 'GOL', minuto: 0, descripcion: '' }
 
 export default function PartidosPage({ selectedTorneoId }) {
   const queryClient = useQueryClient()
@@ -13,6 +14,9 @@ export default function PartidosPage({ selectedTorneoId }) {
   const [jornadaFiltro, setJornadaFiltro] = useState('')
   const [programarForm, setProgramarForm] = useState(initialProgramarForm)
   const [resultadoForm, setResultadoForm] = useState(initialResultadoForm)
+  const [showEventoModal, setShowEventoModal] = useState(false)
+  const [selectedPartido, setSelectedPartido] = useState(null)
+  const [eventoForm, setEventoForm] = useState(initialEventoForm)
 
   const {
     data: partidos = [],
@@ -63,6 +67,28 @@ export default function PartidosPage({ selectedTorneoId }) {
       setResultadoForm(initialResultadoForm)
     },
   })
+
+  const eventoMutation = useMutation({
+    mutationFn: ({ partidoId, ...evento }) =>
+      apiPost(`/partidos/${partidoId}/eventos`, evento),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['goleadores', selectedTorneoId])
+      queryClient.invalidateQueries(['fairplay', selectedTorneoId])
+      setShowEventoModal(false)
+      setEventoForm(initialEventoForm)
+    },
+  })
+
+  const openEventoModal = (partido) => {
+    setSelectedPartido(partido)
+    setShowEventoModal(true)
+  }
+
+  const handleEventoSubmit = (e) => {
+    e.preventDefault()
+    if (!selectedPartido || !eventoForm.jugadorId) return
+    eventoMutation.mutate({ partidoId: selectedPartido.id, ...eventoForm })
+  }
 
   const handleProgramar = (e) => {
     e.preventDefault()
@@ -282,7 +308,14 @@ export default function PartidosPage({ selectedTorneoId }) {
                     )}
                   </td>
                   <td className="pe-4 text-end">
-                    {getStatusBadge(p.resultado)}
+                    <div className="d-flex justify-content-end align-items-center gap-2">
+                      {p.resultado !== 'PENDIENTE' && (
+                        <Button variant="outline-primary" size="sm" onClick={() => openEventoModal(p)} title="Añadir Evento">
+                          <PlusCircle size={14} />
+                        </Button>
+                      )}
+                      {getStatusBadge(p.resultado)}
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -298,6 +331,68 @@ export default function PartidosPage({ selectedTorneoId }) {
           </Table>
         </Card.Body>
       </Card>
+
+      <Modal show={showEventoModal} onHide={() => setShowEventoModal(false)} centered>
+        <Modal.Header closeButton className="border-0 pb-0">
+          <Modal.Title className="fw-bold">Registrar Evento de Partido</Modal.Title>
+        </Modal.Header>
+        <Form onSubmit={handleEventoSubmit}>
+          <Modal.Body className="pt-3">
+            <Form.Group className="mb-3">
+              <Form.Label className="small fw-bold text-muted">Tipo de Evento</Form.Label>
+              <Form.Select
+                value={eventoForm.tipo}
+                onChange={(e) => setEventoForm({ ...eventoForm, tipo: e.target.value })}
+                className="border-0 bg-light shadow-none"
+              >
+                <option value="GOL">Gol</option>
+                <option value="ASISTENCIA">Asistencia</option>
+                <option value="TARJETA_AMARILLA">Tarjeta Amarilla</option>
+                <option value="TARJETA_ROJA">Tarjeta Roja</option>
+                <option value="AUTOGOL">Autogol</option>
+              </Form.Select>
+            </Form.Group>
+            <Form.Group className="mb-3">
+              <Form.Label className="small fw-bold text-muted">Minuto</Form.Label>
+              <Form.Control
+                type="number"
+                min="1"
+                max="120"
+                value={eventoForm.minuto}
+                onChange={(e) => setEventoForm({ ...eventoForm, minuto: Number(e.target.value) })}
+                className="border-0 bg-light shadow-none"
+              />
+            </Form.Group>
+            <Form.Group className="mb-3">
+              <Form.Label className="small fw-bold text-muted">Jugador (ID)</Form.Label>
+              <Form.Control
+                type="text"
+                placeholder="Introducir UUID del jugador..."
+                value={eventoForm.jugadorId}
+                onChange={(e) => setEventoForm({ ...eventoForm, jugadorId: e.target.value })}
+                className="border-0 bg-light shadow-none"
+              />
+              <Form.Text className="text-muted">En una versión final, aquí habría un buscador de jugadores.</Form.Text>
+            </Form.Group>
+            <Form.Group className="mb-2">
+              <Form.Label className="small fw-bold text-muted">Descripción (Opcional)</Form.Label>
+              <Form.Control
+                as="textarea"
+                rows={2}
+                value={eventoForm.descripcion}
+                onChange={(e) => setEventoForm({ ...eventoForm, descripcion: e.target.value })}
+                className="border-0 bg-light shadow-none"
+              />
+            </Form.Group>
+          </Modal.Body>
+          <Modal.Footer className="border-0 pt-0">
+            <Button variant="light" onClick={() => setShowEventoModal(false)} className="fw-bold px-4">Cancelar</Button>
+            <Button variant="primary" type="submit" className="fw-bold px-4 shadow-sm" disabled={eventoMutation.isPending}>
+              {eventoMutation.isPending ? <Spinner size="sm" /> : 'Registrar Evento'}
+            </Button>
+          </Modal.Footer>
+        </Form>
+      </Modal>
     </div>
   )
 }

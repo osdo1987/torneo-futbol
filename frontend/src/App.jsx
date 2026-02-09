@@ -10,6 +10,7 @@ import TorneosPage from './pages/Torneos.jsx'
 import EquiposPage from './pages/Equipos.jsx'
 import PartidosPage from './pages/Partidos.jsx'
 import TablaPage from './pages/Tabla.jsx'
+import EstadisticasPage from './pages/Estadisticas.jsx'
 import ConfigPage from './pages/Config.jsx'
 
 import './App.css'
@@ -60,6 +61,7 @@ export default function App() {
                 <Route path="/equipos" element={<EquiposPage selectedTorneoId={selectedTorneoId} />} />
                 <Route path="/partidos" element={<PartidosPage selectedTorneoId={selectedTorneoId} />} />
                 <Route path="/tabla" element={<TablaPage selectedTorneoId={selectedTorneoId} />} />
+                <Route path="/estadisticas" element={<EstadisticasPage selectedTorneoId={selectedTorneoId} />} />
                 <Route path="/config" element={<ConfigPage apiUrl={import.meta.env.VITE_API_URL || 'http://localhost:8080/api'} />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>

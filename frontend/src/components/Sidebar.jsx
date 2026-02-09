@@ -7,7 +7,8 @@ import {
   CalendarEvent,
   Table,
   Gear,
-  TrophyFill
+  TrophyFill,
+  BarChart
 } from 'react-bootstrap-icons'
 
 export default function Sidebar({ torneos = [], selectedTorneoId, onSelectTorneo }) {
@@ -67,6 +68,11 @@ export default function Sidebar({ torneos = [], selectedTorneoId, onSelectTorneo
         <NavLink to="/tabla" className={({ isActive }) => `nav-link-custom ${isActive ? 'active' : ''}`}>
           <Table size={18} />
           <span>Posiciones</span>
+        </NavLink>
+
+        <NavLink to="/estadisticas" className={({ isActive }) => `nav-link-custom ${isActive ? 'active' : ''}`}>
+          <BarChart size={18} />
+          <span>Estadísticas</span>
         </NavLink>
 
         <div className="mt-4">

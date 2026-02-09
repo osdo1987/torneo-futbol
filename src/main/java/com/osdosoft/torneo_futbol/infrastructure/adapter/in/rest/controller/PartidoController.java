@@ -7,6 +7,8 @@ import com.osdosoft.torneo_futbol.domain.port.in.ProgramarPartidoUseCase;
 import com.osdosoft.torneo_futbol.infrastructure.adapter.in.rest.dto.PartidoResponse;
 import com.osdosoft.torneo_futbol.infrastructure.adapter.in.rest.dto.ProgramarPartidoRequest;
 import com.osdosoft.torneo_futbol.infrastructure.adapter.in.rest.dto.ResultadoRequest;
+import com.osdosoft.torneo_futbol.domain.port.in.RegistrarEventoUseCase;
+import com.osdosoft.torneo_futbol.infrastructure.adapter.in.rest.dto.EventoRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -22,13 +24,24 @@ public class PartidoController {
     private final RegistrarResultadoUseCase registrarResultadoUseCase;
     private final ConsultarTorneoUseCase consultarTorneoUseCase;
     private final ProgramarPartidoUseCase programarPartidoUseCase;
+    private final RegistrarEventoUseCase registrarEventoUseCase;
 
     public PartidoController(RegistrarResultadoUseCase registrarResultadoUseCase,
             ConsultarTorneoUseCase consultarTorneoUseCase,
-            ProgramarPartidoUseCase programarPartidoUseCase) {
+            ProgramarPartidoUseCase programarPartidoUseCase,
+            RegistrarEventoUseCase registrarEventoUseCase) {
         this.registrarResultadoUseCase = registrarResultadoUseCase;
         this.consultarTorneoUseCase = consultarTorneoUseCase;
         this.programarPartidoUseCase = programarPartidoUseCase;
+        this.registrarEventoUseCase = registrarEventoUseCase;
+    }
+
+    @PostMapping("/{partidoId}/eventos")
+    public ResponseEntity<Void> registrarEvento(@PathVariable UUID partidoId,
+            @Valid @RequestBody EventoRequest request) {
+        registrarEventoUseCase.ejecutar(partidoId, request.jugadorId(), request.tipo(), request.minuto(),
+                request.descripcion());
+        return ResponseEntity.ok().build();
     }
 
     @GetMapping("/torneo/{torneoId}")
