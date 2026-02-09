@@ -1,6 +1,7 @@
 ﻿import { useMemo, useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Alert, Spinner } from 'react-bootstrap'
+import { Alert, Spinner, Card, Row, Col, Form, Button, Table, Badge } from 'react-bootstrap'
+import { Calendar2Event, Trophy, Clock, Filter, CheckCircleFill, DashCircleFill } from 'react-bootstrap-icons'
 import { apiGet, apiPut } from '../api'
 
 const initialProgramarForm = { partidoId: '', fechaProgramada: '' }
@@ -26,9 +27,6 @@ export default function PartidosPage({ selectedTorneoId }) {
 
   const {
     data: equipos = [],
-    isLoading: loadingEquipos,
-    isError: isErrorEquipos,
-    error: errorEquipos,
   } = useQuery({
     queryKey: ['equipos', selectedTorneoId],
     queryFn: () => apiGet(`/torneos/${selectedTorneoId}/equipos`),
@@ -78,149 +76,228 @@ export default function PartidosPage({ selectedTorneoId }) {
     resultadoMutation.mutate(resultadoForm)
   }
 
-  const estadoClass = (resultado) => {
-    if (!resultado) return 'pendiente'
-    return String(resultado).toLowerCase()
+  const getStatusBadge = (status) => {
+    switch (status) {
+      case 'PENDIENTE': return <Badge bg="light" text="dark" className="border shadow-none">Pendiente</Badge>
+      case 'LOCAL_GANO': return <Badge bg="primary-light" className="text-primary-accent border-0">Galt. Local</Badge>
+      case 'VISITANTE_GANO': return <Badge bg="primary-light" className="text-primary-accent border-0">Galt. Vis.</Badge>
+      case 'EMPATE': return <Badge bg="warning-light" className="text-warning border-0">Empate</Badge>
+      default: return <Badge bg="secondary">Finalizado</Badge>
+    }
   }
 
   if (!selectedTorneoId) {
-    return <Alert variant="info">Por favor, selecciona un torneo para gestionar los partidos.</Alert>
+    return (
+      <div className="text-center py-5">
+        <Calendar2Event size={48} className="text-muted mb-3 opacity-25" />
+        <h3 className="text-muted">Calendario no disponible</h3>
+        <p className="text-muted">Selecciona un torneo para gestionar su cronograma de encuentros.</p>
+      </div>
+    )
   }
 
   return (
-    <div className="page partidos-page">
-      <div className="page-header">
-        <div>
-          <div className="eyebrow">Operación</div>
-          <h1>Partidos</h1>
-        </div>
-      </div>
+    <div className="container-fluid p-0 fade-in">
+      <header className="mb-5">
+        <h1 className="display-6 fw-bold mb-1">Centro de Competición</h1>
+        <p className="text-muted">Programación de encuentros y registro oficial de resultados</p>
+      </header>
 
-      {(loadingPartidos || loadingEquipos) && <Spinner animation="border" />}
-      {isErrorPartidos && <Alert variant="danger">Error al cargar partidos: {errorPartidos.message}</Alert>}
-      {isErrorEquipos && <Alert variant="danger">Error al cargar equipos: {errorEquipos.message}</Alert>}
+      {/* Control Panel */}
+      <Card className="border-0 shadow-sm mb-5">
+        <Card.Header className="bg-white border-0 py-3 px-4">
+          <h5 className="mb-0 fw-bold">Gestión de Encuentros</h5>
+        </Card.Header>
+        <Card.Body className="px-4 pb-4">
+          <Row className="g-4">
+            <Col lg={6}>
+              <div className="p-4 rounded-4 bg-light h-100">
+                <h6 className="fw-bold mb-3 d-flex align-items-center gap-2">
+                  <Clock className="text-primary" /> Programar Fecha y Hora
+                </h6>
+                <Form onSubmit={handleProgramar}>
+                  <Form.Group className="mb-3">
+                    <Form.Select
+                      value={programarForm.partidoId}
+                      onChange={(e) => setProgramarForm({ ...programarForm, partidoId: e.target.value })}
+                      className="border-0 shadow-none py-2"
+                    >
+                      <option value="">Seleccionar encuentro...</option>
+                      {partidos.filter(p => !p.fechaProgramada).map((p) => (
+                        <option key={p.id} value={p.id}>
+                          J{p.jornada}: {equiposById.get(p.equipoLocalId) || 'Eq 1'} vs {equiposById.get(p.equipoVisitanteId) || 'Eq 2'}
+                        </option>
+                      ))}
+                    </Form.Select>
+                  </Form.Group>
+                  <Form.Group className="mb-3">
+                    <Form.Control
+                      type="datetime-local"
+                      value={programarForm.fechaProgramada}
+                      onChange={(e) => setProgramarForm({ ...programarForm, fechaProgramada: e.target.value })}
+                      className="border-0 shadow-none py-2"
+                    />
+                  </Form.Group>
+                  <Button variant="primary" type="submit" className="w-100 fw-bold py-2 shadow-sm" disabled={programarMutation.isPending}>
+                    {programarMutation.isPending ? <Spinner size="sm" /> : 'Confirmar Programación'}
+                  </Button>
+                </Form>
+              </div>
+            </Col>
 
-      <div className="card">
-        <div className="card-header">
-          <h2>Gestión de partidos</h2>
-        </div>
+            <Col lg={6}>
+              <div className="p-4 rounded-4 bg-primary bg-opacity-10 h-100">
+                <h6 className="fw-bold mb-3 d-flex align-items-center gap-2">
+                  <Trophy className="text-primary" /> Registrar Acta de Partido
+                </h6>
+                <Form onSubmit={handleResultado}>
+                  <Form.Group className="mb-3">
+                    <Form.Select
+                      value={resultadoForm.partidoId}
+                      onChange={(e) => setResultadoForm({ ...resultadoForm, partidoId: e.target.value })}
+                      className="border-0 shadow-none py-2"
+                    >
+                      <option value="">Seleccionar encuentro...</option>
+                      {partidos.filter(p => p.resultado === 'PENDIENTE').map((p) => (
+                        <option key={p.id} value={p.id}>
+                          J{p.jornada}: {equiposById.get(p.equipoLocalId) || 'Eq 1'} vs {equiposById.get(p.equipoVisitanteId) || 'Eq 2'}
+                        </option>
+                      ))}
+                    </Form.Select>
+                  </Form.Group>
+                  <Row className="g-3 mb-3">
+                    <Col>
+                      <Form.Control
+                        type="number"
+                        min="0"
+                        value={resultadoForm.golesLocal}
+                        onChange={(e) => setResultadoForm({ ...resultadoForm, golesLocal: Number(e.target.value) })}
+                        placeholder="Local"
+                        className="border-0 shadow-none py-2 text-center fw-bold"
+                      />
+                    </Col>
+                    <Col xs="auto" className="d-flex align-items-center text-muted fw-bold">-</Col>
+                    <Col>
+                      <Form.Control
+                        type="number"
+                        min="0"
+                        value={resultadoForm.golesVisitante}
+                        onChange={(e) => setResultadoForm({ ...resultadoForm, golesVisitante: Number(e.target.value) })}
+                        placeholder="Vis."
+                        className="border-0 shadow-none py-2 text-center fw-bold"
+                      />
+                    </Col>
+                  </Row>
+                  <Button variant="dark" type="submit" className="w-100 fw-bold py-2" disabled={resultadoMutation.isPending}>
+                    {resultadoMutation.isPending ? <Spinner size="sm" /> : 'Sellar Resultado'}
+                  </Button>
+                </Form>
+              </div>
+            </Col>
+          </Row>
+        </Card.Body>
+      </Card>
 
-        <div className="split forms-top">
-          <form onSubmit={handleProgramar} className="form">
-            <div className="form-title">Programar partido</div>
-            <select
-              value={programarForm.partidoId}
-              onChange={(e) => setProgramarForm({ ...programarForm, partidoId: e.target.value })}
-            >
-              <option value="">Seleccionar partido</option>
-              {partidos.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {equiposById.get(p.equipoLocalId) || p.equipoLocalId} vs {equiposById.get(p.equipoVisitanteId) || p.equipoVisitanteId}
-                </option>
-              ))}
-            </select>
-            <input
-              type="datetime-local"
-              value={programarForm.fechaProgramada}
-              onChange={(e) => setProgramarForm({ ...programarForm, fechaProgramada: e.target.value })}
-            />
-            <button className="btn block secondary" type="submit" disabled={programarMutation.isPending}>
-              {programarMutation.isPending ? 'Programando...' : 'Programar'}
-            </button>
-            {programarMutation.isError && (
-              <div className="muted">{programarMutation.error.message}</div>
-            )}
-          </form>
-
-          <form onSubmit={handleResultado} className="form">
-            <div className="form-title">Registrar resultado</div>
-            <select
-              value={resultadoForm.partidoId}
-              onChange={(e) => setResultadoForm({ ...resultadoForm, partidoId: e.target.value })}
-            >
-              <option value="">Seleccionar partido</option>
-              {partidos.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {equiposById.get(p.equipoLocalId) || p.equipoLocalId} vs {equiposById.get(p.equipoVisitanteId) || p.equipoVisitanteId}
-                </option>
-              ))}
-            </select>
-            <div className="form-row">
-              <input
+      {/* Filters & Listing */}
+      <Card className="border-0 shadow-sm overflow-hidden">
+        <Card.Header className="bg-white border-0 py-3 px-4 d-flex justify-content-between align-items-center flex-wrap gap-3">
+          <h5 className="mb-0 fw-bold">Calendario de Encuentros</h5>
+          <div className="d-flex gap-2">
+            <div className="input-group input-group-sm">
+              <span className="input-group-text bg-light border-0"><Filter size={14} /></span>
+              <Form.Control
                 type="number"
-                min="0"
-                value={resultadoForm.golesLocal}
-                onChange={(e) => setResultadoForm({ ...resultadoForm, golesLocal: Number(e.target.value) })}
-                placeholder="Goles local"
-              />
-              <input
-                type="number"
-                min="0"
-                value={resultadoForm.golesVisitante}
-                onChange={(e) => setResultadoForm({ ...resultadoForm, golesVisitante: Number(e.target.value) })}
-                placeholder="Goles visitante"
+                min="1"
+                placeholder="Jornada"
+                value={jornadaFiltro}
+                onChange={(e) => setJornadaFiltro(e.target.value)}
+                className="bg-light border-0 shadow-none"
+                style={{ width: '80px' }}
               />
             </div>
-            <button className="btn block ghost" type="submit" disabled={resultadoMutation.isPending}>
-              {resultadoMutation.isPending ? 'Registrando...' : 'Registrar resultado'}
-            </button>
-            {resultadoMutation.isError && (
-              <div className="muted">{resultadoMutation.error.message}</div>
-            )}
-          </form>
-        </div>
-      </div>
-
-      <div className="card">
-        <div className="card-header">
-          <div>
-            <h2>Listado de partidos</h2>
-            <div className="muted">Filtra por jornada o estado.</div>
-          </div>
-          <div className="filters">
-            <input
-              className="filter-input"
-              type="number"
-              min="1"
-              placeholder="Jornada"
-              value={jornadaFiltro}
-              onChange={(e) => setJornadaFiltro(e.target.value)}
-            />
-            <select
-              className="filter-input"
+            <Form.Select
+              size="sm"
               value={estadoFiltro}
               onChange={(e) => setEstadoFiltro(e.target.value)}
+              className="bg-light border-0 shadow-none"
+              style={{ width: '130px' }}
             >
-              <option value="">Todos</option>
-              <option value="PENDIENTE">Pendiente</option>
-              <option value="LOCAL_GANO">Local ganó</option>
-              <option value="VISITANTE_GANO">Visitante ganó</option>
-              <option value="EMPATE">Empate</option>
-            </select>
+              <option value="">Estados</option>
+              <option value="PENDIENTE">Pendientes</option>
+              <option value="LOCAL_GANO">G. Local</option>
+              <option value="VISITANTE_GANO">G. Visitante</option>
+              <option value="EMPATE">Empates</option>
+            </Form.Select>
           </div>
-        </div>
-        <div className="table table-wide">
-          <div className="table-head">
-            <span>Jornada</span>
-            <span>Local</span>
-            <span>Visitante</span>
-            <span>Fecha</span>
-            <span>Estado</span>
-          </div>
-          {partidosFiltrados.map((p) => (
-            <div key={p.id} className="table-row">
-              <span>{p.jornada}</span>
-              <span>{equiposById.get(p.equipoLocalId) || p.equipoLocalId}</span>
-              <span>{equiposById.get(p.equipoVisitanteId) || p.equipoVisitanteId}</span>
-              <span>{p.fechaProgramada ? new Date(p.fechaProgramada).toLocaleString() : 'Sin fecha'}</span>
-              <span className={`status-chip ${estadoClass(p.resultado)}`}>{p.resultado}</span>
-            </div>
-          ))}
-          {partidosFiltrados.length === 0 && (
-            <div className="muted table-empty">No hay partidos con esos filtros.</div>
+        </Card.Header>
+
+        <Card.Body className="p-0">
+          {(loadingPartidos) && (
+            <div className="text-center py-5"><Spinner animation="border" variant="primary" /></div>
           )}
-        </div>
-      </div>
+
+          <Table responsive hover className="align-middle mb-0">
+            <thead className="bg-light">
+              <tr>
+                <th className="ps-4 small text-muted text-uppercase">Jor.</th>
+                <th className="small text-muted text-uppercase">Encuentro</th>
+                <th className="small text-muted text-uppercase text-center">Score</th>
+                <th className="small text-muted text-uppercase">Programación</th>
+                <th className="pe-4 small text-muted text-uppercase text-end">Estado</th>
+              </tr>
+            </thead>
+            <tbody>
+              {partidosFiltrados.map((p) => (
+                <tr key={p.id}>
+                  <td className="ps-4">
+                    <Badge bg="secondary" className="bg-opacity-10 text-secondary border">J{p.jornada}</Badge>
+                  </td>
+                  <td>
+                    <div className="d-flex align-items-center gap-2">
+                      <span className="fw-semibold">{equiposById.get(p.equipoLocalId) || 'Eq 1'}</span>
+                      <small className="text-muted fw-bold">VS</small>
+                      <span className="fw-semibold">{equiposById.get(p.equipoVisitanteId) || 'Eq 2'}</span>
+                    </div>
+                  </td>
+                  <td className="text-center">
+                    {p.resultado !== 'PENDIENTE' ? (
+                      <div className="fw-bold h5 mb-0">
+                        {p.golesLocal} <span className="text-muted small">-</span> {p.golesVisitante}
+                      </div>
+                    ) : (
+                      <DashCircleFill className="text-muted opacity-25" />
+                    )}
+                  </td>
+                  <td className="small">
+                    {p.fechaProgramada ? (
+                      <div className="d-flex align-items-center gap-2">
+                        <CheckCircleFill size={12} className="text-success" />
+                        <div>
+                          <div className="fw-bold">{new Date(p.fechaProgramada).toLocaleDateString()}</div>
+                          <div className="text-muted">{new Date(p.fechaProgramada).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+                        </div>
+                      </div>
+                    ) : (
+                      <span className="text-muted italic">No programado</span>
+                    )}
+                  </td>
+                  <td className="pe-4 text-end">
+                    {getStatusBadge(p.resultado)}
+                  </td>
+                </tr>
+              ))}
+              {partidosFiltrados.length === 0 && !loadingPartidos && (
+                <tr>
+                  <td colSpan="5" className="text-center py-5 text-muted">
+                    <Calendar2Event size={32} className="opacity-25 mb-2" />
+                    <p className="mb-0">No se encontraron encuentros con los filtros aplicados.</p>
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </Table>
+        </Card.Body>
+      </Card>
     </div>
   )
 }
