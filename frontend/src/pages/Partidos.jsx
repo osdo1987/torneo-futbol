@@ -1,12 +1,11 @@
-﻿import { useMemo, useState } from 'react'
+﻿import React, { useMemo, useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Alert, Spinner, Card, Row, Col, Form, Button, Table, Badge, Modal } from 'react-bootstrap'
-import { Calendar2Event, Trophy, Clock, Filter, CheckCircleFill, DashCircleFill, PlusCircle } from 'react-bootstrap-icons'
+import { Calendar2Event, Trophy, Clock, Filter, CheckCircleFill, DashCircleFill, PlusCircle, Balloon, ChatLeftQuote, ChevronDown, ChevronUp, InfoCircle, ListTask } from 'react-bootstrap-icons'
 import { apiGet, apiPut, apiPost } from '../api'
-
 const initialProgramarForm = { partidoId: '', fechaProgramada: '' }
 const initialResultadoForm = { partidoId: '', golesLocal: 0, golesVisitante: 0 }
-const initialEventoForm = { jugadorId: '', tipo: 'GOL', minuto: 0, descripcion: '' }
+const initialEventoForm = { jugadorId: '', tipo: 'GOL', minuto: 1, descripcion: '' }
 
 export default function PartidosPage({ selectedTorneoId }) {
   const queryClient = useQueryClient()
@@ -17,6 +16,7 @@ export default function PartidosPage({ selectedTorneoId }) {
   const [showEventoModal, setShowEventoModal] = useState(false)
   const [selectedPartido, setSelectedPartido] = useState(null)
   const [eventoForm, setEventoForm] = useState(initialEventoForm)
+  const [expandedPartidoId, setExpandedPartidoId] = useState(null)
 
   const {
     data: partidos = [],
@@ -102,15 +102,60 @@ export default function PartidosPage({ selectedTorneoId }) {
     resultadoMutation.mutate(resultadoForm)
   }
 
+  const {
+    data: jugadoresPartido = [],
+  } = useQuery({
+    queryKey: ['jugadores-partido', selectedPartido?.id],
+    queryFn: async () => {
+      const local = await apiGet(`/torneos/${selectedTorneoId}/equipos/${selectedPartido.equipoLocalId}/jugadores`);
+      const visitante = await apiGet(`/torneos/${selectedTorneoId}/equipos/${selectedPartido.equipoVisitanteId}/jugadores`);
+      return [
+        ...local.map(j => ({ ...j, equipo: 'Local' })),
+        ...visitante.map(j => ({ ...j, equipo: 'Visitante' }))
+      ];
+    },
+    enabled: !!selectedPartido && !!selectedTorneoId,
+  })
+
   const getStatusBadge = (status) => {
     switch (status) {
-      case 'PENDIENTE': return <Badge bg="light" text="dark" className="border shadow-none">Pendiente</Badge>
-      case 'LOCAL_GANO': return <Badge bg="primary-light" className="text-primary-accent border-0">Galt. Local</Badge>
-      case 'VISITANTE_GANO': return <Badge bg="primary-light" className="text-primary-accent border-0">Galt. Vis.</Badge>
-      case 'EMPATE': return <Badge bg="warning-light" className="text-warning border-0">Empate</Badge>
-      default: return <Badge bg="secondary">Finalizado</Badge>
+      case 'PENDIENTE': return <Badge bg="light" text="dark" className="border shadow-none py-2 px-3">Pendiente</Badge>
+      case 'LOCAL_GANO': return <Badge bg="primary" className="py-2 px-3 shadow-sm">Galt. Local</Badge>
+      case 'VISITANTE_GANO': return <Badge bg="primary" className="py-2 px-3 shadow-sm">Galt. Vis.</Badge>
+      case 'EMPATE': return <Badge bg="info" className="py-2 px-3 shadow-sm">Empate</Badge>
+      default: return <Badge bg="secondary" className="py-2 px-3">Finalizado</Badge>
     }
   }
+
+  const handleToggleExpand = (id) => {
+    setExpandedPartidoId(expandedPartidoId === id ? null : id)
+  }
+
+  const { data: currentEvents = [], isLoading: loadingEvents } = useQuery({
+    queryKey: ['partido-eventos', expandedPartidoId],
+    queryFn: () => apiGet(`/partidos/${expandedPartidoId}/eventos`),
+    enabled: !!expandedPartidoId
+  })
+
+  // Group events by type for summary in the main row
+  const getEventsSummary = (partidoId) => {
+    // This would require fetching all events for all matches, 
+    // but for now we'll only show events when expanded for performance.
+    return null;
+  }
+
+  const { data: allPlayers = [] } = useQuery({
+    queryKey: ['all-players', selectedTorneoId],
+    queryFn: async () => {
+      const results = await Promise.all(
+        equipos.map(e => apiGet(`/torneos/${selectedTorneoId}/equipos/${e.id}/jugadores`))
+      );
+      return results.flat();
+    },
+    enabled: !!selectedTorneoId && equipos.length > 0
+  })
+
+  const playerNames = useMemo(() => new Map(allPlayers.map(j => [j.id, j.nombre])), [allPlayers])
 
   if (!selectedTorneoId) {
     return (
@@ -273,52 +318,109 @@ export default function PartidosPage({ selectedTorneoId }) {
               </tr>
             </thead>
             <tbody>
-              {partidosFiltrados.map((p) => (
-                <tr key={p.id}>
-                  <td className="ps-4">
-                    <Badge bg="secondary" className="bg-opacity-10 text-secondary border">J{p.jornada}</Badge>
-                  </td>
-                  <td>
-                    <div className="d-flex align-items-center gap-2">
-                      <span className="fw-semibold">{equiposById.get(p.equipoLocalId) || 'Eq 1'}</span>
-                      <small className="text-muted fw-bold">VS</small>
-                      <span className="fw-semibold">{equiposById.get(p.equipoVisitanteId) || 'Eq 2'}</span>
-                    </div>
-                  </td>
-                  <td className="text-center">
-                    {p.resultado !== 'PENDIENTE' ? (
-                      <div className="fw-bold h5 mb-0">
-                        {p.golesLocal} <span className="text-muted small">-</span> {p.golesVisitante}
-                      </div>
-                    ) : (
-                      <DashCircleFill className="text-muted opacity-25" />
-                    )}
-                  </td>
-                  <td className="small">
-                    {p.fechaProgramada ? (
-                      <div className="d-flex align-items-center gap-2">
-                        <CheckCircleFill size={12} className="text-success" />
-                        <div>
-                          <div className="fw-bold">{new Date(p.fechaProgramada).toLocaleDateString()}</div>
-                          <div className="text-muted">{new Date(p.fechaProgramada).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+              {partidosFiltrados.map((p) => {
+                const isExpanded = expandedPartidoId === p.id;
+                return (
+                  <React.Fragment key={p.id}>
+                    <tr className={isExpanded ? 'bg-light border-bottom-0' : ''}>
+                      <td className="ps-4">
+                        <div className="d-flex align-items-center gap-2">
+                          <Button
+                            variant="link"
+                            size="sm"
+                            className="p-0 border-0 shadow-none text-muted"
+                            onClick={() => handleToggleExpand(p.id)}
+                          >
+                            {isExpanded ? <ChevronUp /> : <ChevronDown />}
+                          </Button>
+                          <Badge bg="secondary" className="bg-opacity-10 text-secondary border">J{p.jornada}</Badge>
                         </div>
-                      </div>
-                    ) : (
-                      <span className="text-muted italic">No programado</span>
+                      </td>
+                      <td>
+                        <div className="d-flex align-items-center gap-2">
+                          <span className="fw-semibold">{equiposById.get(p.equipoLocalId) || 'Eq 1'}</span>
+                          <small className="text-muted fw-bold">VS</small>
+                          <span className="fw-semibold">{equiposById.get(p.equipoVisitanteId) || 'Eq 2'}</span>
+                        </div>
+                      </td>
+                      <td className="text-center">
+                        {p.resultado !== 'PENDIENTE' ? (
+                          <div className="fw-bold h5 mb-0">
+                            {p.golesLocal} <span className="text-muted small">-</span> {p.golesVisitante}
+                          </div>
+                        ) : (
+                          <DashCircleFill className="text-muted opacity-25" />
+                        )}
+                      </td>
+                      <td className="small">
+                        {p.fechaProgramada ? (
+                          <div className="d-flex align-items-center gap-2">
+                            <CheckCircleFill size={12} className="text-success" />
+                            <div>
+                              <div className="fw-bold">{new Date(p.fechaProgramada).toLocaleDateString()}</div>
+                              <div className="text-muted">{new Date(p.fechaProgramada).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+                            </div>
+                          </div>
+                        ) : (
+                          <span className="text-muted italic">No programado</span>
+                        )}
+                      </td>
+                      <td className="pe-4 text-end">
+                        <div className="d-flex justify-content-end align-items-center gap-2">
+                          {p.resultado !== 'PENDIENTE' && (
+                            <Button
+                              variant="primary"
+                              size="sm"
+                              onClick={() => openEventoModal(p)}
+                              title="Añadir Evento"
+                              className="rounded-pill px-3 shadow-sm d-flex align-items-center gap-1"
+                            >
+                              <PlusCircle size={14} /> <span className="small fw-bold">Acta</span>
+                            </Button>
+                          )}
+                          {getStatusBadge(p.resultado)}
+                        </div>
+                      </td>
+                    </tr>
+                    {isExpanded && (
+                      <tr className="bg-light border-top-0">
+                        <td colSpan="5" className="pb-4 px-5">
+                          <div className="bg-white rounded-4 shadow-sm p-4 animate-slide-down">
+                            <h6 className="fw-bold text-muted small text-uppercase mb-3 d-flex align-items-center gap-2">
+                              <ListTask /> Eventos Cronológicos
+                            </h6>
+                            {loadingEvents ? <Spinner size="sm" /> : (
+                              <Row className="g-3">
+                                {currentEvents.sort((a, b) => a.minuto - b.minuto).map(e => (
+                                  <Col md={6} lg={4} key={e.id}>
+                                    <div className="d-flex align-items-center gap-3 p-3 border rounded-3 bg-light bg-opacity-50">
+                                      <div className="fw-bold text-primary" style={{ width: '30px' }}>{e.minuto}'</div>
+                                      <div className="flex-grow-1">
+                                        <div className="fw-bold small">{playerNames.get(e.jugadorId) || 'Jugador'}</div>
+                                        <div className="text-muted small" style={{ fontSize: '0.7rem' }}>{e.tipo}</div>
+                                      </div>
+                                      <div className="status-icon">
+                                        {e.tipo === 'GOL' && <Balloon className="text-success" />}
+                                        {e.tipo === 'TARJETA_AMARILLA' && <div className="bg-warning rounded-sm" style={{ width: 10, height: 14 }} />}
+                                        {e.tipo === 'TARJETA_ROJA' && <div className="bg-danger rounded-sm" style={{ width: 10, height: 14 }} />}
+                                      </div>
+                                    </div>
+                                  </Col>
+                                ))}
+                                {currentEvents.length === 0 && (
+                                  <Col className="text-center py-3 text-muted small italic">
+                                    <InfoCircle className="me-2" /> No se han registrado incidencias en este encuentro.
+                                  </Col>
+                                )}
+                              </Row>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
                     )}
-                  </td>
-                  <td className="pe-4 text-end">
-                    <div className="d-flex justify-content-end align-items-center gap-2">
-                      {p.resultado !== 'PENDIENTE' && (
-                        <Button variant="outline-primary" size="sm" onClick={() => openEventoModal(p)} title="Añadir Evento">
-                          <PlusCircle size={14} />
-                        </Button>
-                      )}
-                      {getStatusBadge(p.resultado)}
-                    </div>
-                  </td>
-                </tr>
-              ))}
+                  </React.Fragment>
+                )
+              })}
               {partidosFiltrados.length === 0 && !loadingPartidos && (
                 <tr>
                   <td colSpan="5" className="text-center py-5 text-muted">
@@ -364,15 +466,26 @@ export default function PartidosPage({ selectedTorneoId }) {
               />
             </Form.Group>
             <Form.Group className="mb-3">
-              <Form.Label className="small fw-bold text-muted">Jugador (ID)</Form.Label>
-              <Form.Control
-                type="text"
-                placeholder="Introducir UUID del jugador..."
+              <Form.Label className="small fw-bold text-muted text-uppercase">Seleccionar Protagonista</Form.Label>
+              <Form.Select
                 value={eventoForm.jugadorId}
                 onChange={(e) => setEventoForm({ ...eventoForm, jugadorId: e.target.value })}
-                className="border-0 bg-light shadow-none"
-              />
-              <Form.Text className="text-muted">En una versión final, aquí habría un buscador de jugadores.</Form.Text>
+                className="border-0 bg-light shadow-none py-2"
+                required
+              >
+                <option value="">Buscar jugador...</option>
+                <optgroup label="Local">
+                  {jugadoresPartido.filter(j => j.equipo === 'Local').map(j => (
+                    <option key={j.id} value={j.id}>{j.nombre} (#{j.numeroCamiseta})</option>
+                  ))}
+                </optgroup>
+                <optgroup label="Visitante">
+                  {jugadoresPartido.filter(j => j.equipo === 'Visitante').map(j => (
+                    <option key={j.id} value={j.id}>{j.nombre} (#{j.numeroCamiseta})</option>
+                  ))}
+                </optgroup>
+              </Form.Select>
+              <Form.Text className="text-muted small">Solo se muestran jugadores inscritos en los equipos de este encuentro.</Form.Text>
             </Form.Group>
             <Form.Group className="mb-2">
               <Form.Label className="small fw-bold text-muted">Descripción (Opcional)</Form.Label>

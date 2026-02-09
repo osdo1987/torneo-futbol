@@ -16,11 +16,12 @@ import { People, Plus, PersonPlus, ShieldFill, Envelope, PersonBadgeFill } from 
 import { apiGet, apiPost } from '../api'
 
 const initialEquipoForm = { nombre: '', delegadoEmail: '' }
-const initialJugadorForm = { nombre: '', numeroCamiseta: 10 }
+const initialJugadorForm = { nombre: '', numeroCamiseta: 10, posicion: 'DELANTERO', altura: '', peso: '' }
 
 function JugadoresPanel({ torneoId, equipo }) {
   const queryClient = useQueryClient()
-  const [form, setForm] = useState(initialJugadorForm)
+  const [searchTerm, setSearchTerm] = useState('')
+  const [filterPosicion, setFilterPosicion] = useState('TODAS')
 
   const {
     data: jugadores = [],
@@ -33,8 +34,22 @@ function JugadoresPanel({ torneoId, equipo }) {
     enabled: !!torneoId && !!equipo.id,
   })
 
+  const filteredJugadores = jugadores.filter(j => {
+    const matchesSearch = j.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      j.numeroCamiseta.toString().includes(searchTerm)
+    const matchesPos = filterPosicion === 'TODAS' || (j.atributosAdicionales?.posicion === filterPosicion)
+    return matchesSearch && matchesPos
+  })
+
   const mutation = useMutation({
-    mutationFn: (newJugador) => apiPost(`/torneos/${torneoId}/equipos/${equipo.id}/jugadores`, newJugador),
+    mutationFn: (newJugador) => {
+      const { nombre, numeroCamiseta, ...extras } = newJugador;
+      return apiPost(`/torneos/${torneoId}/equipos/${equipo.id}/jugadores`, {
+        nombre,
+        numeroCamiseta,
+        atributosAdicionales: extras
+      });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries(['jugadores', torneoId, equipo.id])
       setForm(initialJugadorForm)
@@ -61,15 +76,39 @@ function JugadoresPanel({ torneoId, equipo }) {
       </Card.Header>
 
       <Card.Body className="px-4 pb-4">
+        {/* Filtros de Búsqueda */}
+        <div className="mb-4 d-flex gap-2">
+          <div className="position-relative flex-grow-1">
+            <Form.Control
+              placeholder="Buscar por nombre o dorsal..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="bg-light border-0 py-2 ps-4 shadow-none"
+            />
+          </div>
+          <Form.Select
+            style={{ width: '180px' }}
+            className="bg-light border-0 shadow-none"
+            value={filterPosicion}
+            onChange={(e) => setFilterPosicion(e.target.value)}
+          >
+            <option value="TODAS">Todas las Posiciones</option>
+            <option value="PORTERO">Porteros</option>
+            <option value="DEFENSA">Defensas</option>
+            <option value="MEDIOCAMPISTA">Volantes</option>
+            <option value="DELANTERO">Delanteros</option>
+          </Form.Select>
+        </div>
+
         <div className="bg-light p-4 rounded-4 mb-4 border border-dashed">
           <h6 className="fw-bold mb-3 d-flex align-items-center gap-2">
-            <PersonPlus size={18} /> Agregar Nuevo Atleta
+            <PersonPlus size={18} /> Inscribir con Ficha Técnica
           </h6>
           <Form onSubmit={handleSubmit}>
             <Row className="g-3">
-              <Col md={7}>
+              <Col md={5}>
                 <Form.Group>
-                  <Form.Label className="small fw-bold text-muted">Nombre Completo</Form.Label>
+                  <Form.Label className="small fw-bold text-muted text-uppercase">Nombre Completo</Form.Label>
                   <Form.Control
                     type="text"
                     placeholder="Ej: Juan Pérez"
@@ -80,18 +119,33 @@ function JugadoresPanel({ torneoId, equipo }) {
                   />
                 </Form.Group>
               </Col>
-              <Col md={3}>
+              <Col md={2}>
                 <Form.Group>
-                  <Form.Label className="small fw-bold text-muted">Dorsal</Form.Label>
+                  <Form.Label className="small fw-bold text-muted text-uppercase">Dorsal</Form.Label>
                   <Form.Control
                     type="number"
                     min="1"
                     max="99"
                     value={form.numeroCamiseta}
                     onChange={(e) => setForm({ ...form, numeroCamiseta: Number(e.target.value) })}
-                    className="border-0 shadow-none py-2"
+                    className="border-0 shadow-none py-2 text-center"
                     required
                   />
+                </Form.Group>
+              </Col>
+              <Col md={3}>
+                <Form.Group>
+                  <Form.Label className="small fw-bold text-muted text-uppercase">Posición</Form.Label>
+                  <Form.Select
+                    value={form.posicion}
+                    onChange={(e) => setForm({ ...form, posicion: e.target.value })}
+                    className="border-0 shadow-none py-2"
+                  >
+                    <option value="PORTERO">Portero</option>
+                    <option value="DEFENSA">Defensa</option>
+                    <option value="MEDIOCAMPISTA">Mediocampista</option>
+                    <option value="DELANTERO">Delantero</option>
+                  </Form.Select>
                 </Form.Group>
               </Col>
               <Col md={2} className="d-flex align-items-end">
@@ -100,11 +154,44 @@ function JugadoresPanel({ torneoId, equipo }) {
                 </Button>
               </Col>
             </Row>
+
+            <Row className="g-3 mt-1">
+              <Col md={3}>
+                <Form.Group>
+                  <Form.Label className="small fw-bold text-muted text-uppercase">Altura (cm)</Form.Label>
+                  <Form.Control
+                    type="number"
+                    placeholder="175"
+                    value={form.altura}
+                    onChange={(e) => setForm({ ...form, altura: e.target.value })}
+                    className="border-0 shadow-none py-2"
+                  />
+                </Form.Group>
+              </Col>
+              <Col md={3}>
+                <Form.Group>
+                  <Form.Label className="small fw-bold text-muted text-uppercase">Peso (kg)</Form.Label>
+                  <Form.Control
+                    type="number"
+                    placeholder="70"
+                    value={form.peso}
+                    onChange={(e) => setForm({ ...form, peso: e.target.value })}
+                    className="border-0 shadow-none py-2"
+                  />
+                </Form.Group>
+              </Col>
+              <Col md={6}>
+                <Form.Text className="text-muted small mt-4 d-block">
+                  * La ficha técnica permite filtros avanzados en futuras versiones de scouteo.
+                </Form.Text>
+              </Col>
+            </Row>
+
             {mutation.isError && <Alert variant="danger" className="mt-3 py-2 small border-0">{mutation.error.message}</Alert>}
           </Form>
         </div>
 
-        <h6 className="fw-bold mb-3 text-uppercase text-muted small letter-spacing-1">Plantilla Actual</h6>
+        <h6 className="fw-bold mb-3 text-uppercase text-muted small letter-spacing-1">Plantilla Actual y Fichas Técinicas</h6>
 
         {isLoading ? (
           <div className="text-center py-4"><Spinner animation="border" variant="primary" size="sm" /></div>
@@ -118,19 +205,25 @@ function JugadoresPanel({ torneoId, equipo }) {
                 </div>
               </Col>
             )}
-            {jugadores.map((j) => (
+            {filteredJugadores.map((j) => (
               <Col md={6} key={j.id}>
-                <div className="d-flex align-items-center justify-content-between p-3 border rounded-3 bg-white hover-shadow transition-all">
-                  <div className="d-flex align-items-center gap-3">
-                    <div className="bg-light text-primary fw-bold rounded-circle d-flex align-items-center justify-content-center shadow-sm" style={{ width: 40, height: 40 }}>
-                      {j.numeroCamiseta}
+                <div className="p-3 border rounded-3 bg-white hover-shadow transition-all border-start-4 border-start-primary">
+                  <div className="d-flex align-items-center justify-content-between mb-2">
+                    <div className="d-flex align-items-center gap-3">
+                      <div className="bg-primary text-white fw-bold rounded-circle d-flex align-items-center justify-content-center shadow-sm" style={{ width: 40, height: 40 }}>
+                        {j.numeroCamiseta}
+                      </div>
+                      <div>
+                        <h6 className="mb-0 fw-bold">{j.nombre}</h6>
+                        <Badge bg="light" text="primary" className="small border">{j.atributosAdicionales?.posicion || 'JUGADOR'}</Badge>
+                      </div>
                     </div>
-                    <div>
-                      <h6 className="mb-0 fw-bold">{j.nombre}</h6>
-                      <small className="text-muted">Federado</small>
-                    </div>
+                    <Badge bg="success" className="rounded-pill px-2" style={{ fontSize: '0.6rem' }}>ACTIVO</Badge>
                   </div>
-                  <Badge bg="light" text="dark" className="border">Active</Badge>
+                  <div className="d-flex gap-3 mt-2 border-top pt-2">
+                    <div className="small text-muted">H: <strong>{j.atributosAdicionales?.altura || '--'} cm</strong></div>
+                    <div className="small text-muted">W: <strong>{j.atributosAdicionales?.peso || '--'} kg</strong></div>
+                  </div>
                 </div>
               </Col>
             ))}

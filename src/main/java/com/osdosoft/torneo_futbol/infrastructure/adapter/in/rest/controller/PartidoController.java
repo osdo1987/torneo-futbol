@@ -1,6 +1,7 @@
 package com.osdosoft.torneo_futbol.infrastructure.adapter.in.rest.controller;
 
 import com.osdosoft.torneo_futbol.domain.model.Partido;
+import com.osdosoft.torneo_futbol.domain.port.in.ConsultarEventosUseCase;
 import com.osdosoft.torneo_futbol.domain.port.in.RegistrarResultadoUseCase;
 import com.osdosoft.torneo_futbol.domain.port.in.ConsultarTorneoUseCase;
 import com.osdosoft.torneo_futbol.domain.port.in.ProgramarPartidoUseCase;
@@ -25,15 +26,30 @@ public class PartidoController {
     private final ConsultarTorneoUseCase consultarTorneoUseCase;
     private final ProgramarPartidoUseCase programarPartidoUseCase;
     private final RegistrarEventoUseCase registrarEventoUseCase;
+    private final ConsultarEventosUseCase consultarEventosUseCase;
 
     public PartidoController(RegistrarResultadoUseCase registrarResultadoUseCase,
             ConsultarTorneoUseCase consultarTorneoUseCase,
             ProgramarPartidoUseCase programarPartidoUseCase,
-            RegistrarEventoUseCase registrarEventoUseCase) {
+            RegistrarEventoUseCase registrarEventoUseCase,
+            ConsultarEventosUseCase consultarEventosUseCase) {
         this.registrarResultadoUseCase = registrarResultadoUseCase;
         this.consultarTorneoUseCase = consultarTorneoUseCase;
         this.programarPartidoUseCase = programarPartidoUseCase;
         this.registrarEventoUseCase = registrarEventoUseCase;
+        this.consultarEventosUseCase = consultarEventosUseCase;
+    }
+
+    @GetMapping("/{partidoId}/eventos")
+    public ResponseEntity<List<com.osdosoft.torneo_futbol.infrastructure.adapter.in.rest.dto.EventoResponse>> obtenerEventos(
+            @PathVariable UUID partidoId) {
+        List<com.osdosoft.torneo_futbol.infrastructure.adapter.in.rest.dto.EventoResponse> response = consultarEventosUseCase
+                .listarPorPartido(partidoId).stream()
+                .map(e -> new com.osdosoft.torneo_futbol.infrastructure.adapter.in.rest.dto.EventoResponse(
+                        e.getId(), e.getPartidoId(), e.getJugadorId(), e.getTipo().name(), e.getMinuto(),
+                        e.getDescripcion()))
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping("/{partidoId}/eventos")

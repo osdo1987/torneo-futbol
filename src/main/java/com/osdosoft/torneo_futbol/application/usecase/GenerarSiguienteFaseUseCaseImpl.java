@@ -49,11 +49,12 @@ public class GenerarSiguienteFaseUseCaseImpl implements GenerarSiguienteFaseUseC
         // 1. Obtener resultados de la fase actual
         List<PosicionTabla> tabla = estadisticasPort.obtenerTablaPosiciones(faseActualId);
 
-        // 2. Aplicar regla de avance (Para el ejemplo, usamos una fija o la recuperamos
-        // de la config)
-        // En una implementación real, la ReglaAvance podría venir del Torneo o de la
-        // FaseActual
-        ReglaAvance regla = new com.osdosoft.torneo_futbol.domain.model.TopNReglaAvance(8); // Ejemplo: pasan 8
+        // 2. Aplicar regla de avance dinámica
+        // Si hay menos de 8 equipos, pasamos a los mejores 4 o 2 (siempre potencia de 2
+        // para eliminatorias simples)
+        int numClasificados = tabla.size() >= 8 ? 8 : (tabla.size() >= 4 ? 4 : 2);
+
+        ReglaAvance regla = new com.osdosoft.torneo_futbol.domain.model.TopNReglaAvance(numClasificados);
         List<UUID> equiposQueAvanzan = regla.calcularEquiposQueAvanzan(faseActual, tabla);
 
         // 3. Crear nueva fase
@@ -62,8 +63,7 @@ public class GenerarSiguienteFaseUseCaseImpl implements GenerarSiguienteFaseUseC
                 torneoId,
                 nombreNuevaFase,
                 faseActual.getOrden() + 1,
-                com.osdosoft.torneo_futbol.domain.model.enums.TipoFase.ELIMINATORIA // Ejemplo
-        );
+                com.osdosoft.torneo_futbol.domain.model.enums.TipoFase.ELIMINATORIA);
 
         // 4. Generar partidos usando el adaptador correspondiente
         GeneradorFasesPort generador = generadores.get("eliminatoriaGeneradorAdapter");

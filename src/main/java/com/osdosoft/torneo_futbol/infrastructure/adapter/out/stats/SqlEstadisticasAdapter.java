@@ -5,6 +5,7 @@ import com.osdosoft.torneo_futbol.domain.model.EventoPartido;
 import com.osdosoft.torneo_futbol.domain.model.Partido;
 import com.osdosoft.torneo_futbol.domain.model.PosicionTabla;
 import com.osdosoft.torneo_futbol.domain.model.Torneo;
+import com.osdosoft.torneo_futbol.domain.model.enums.EstadoTorneo;
 import com.osdosoft.torneo_futbol.domain.model.enums.TipoEventoPartido;
 import com.osdosoft.torneo_futbol.domain.port.out.EquipoRepositoryPort;
 import com.osdosoft.torneo_futbol.domain.port.out.EstadisticasPort;
@@ -42,9 +43,15 @@ public class SqlEstadisticasAdapter implements EstadisticasPort {
     public List<PosicionTabla> obtenerTablaPosiciones(UUID faseId) {
         // En un sistema real buscaríamos la fase para obtener su TorneoId
         // Por ahora, obtenemos el torneo activo
-        Torneo torneo = torneoRepository.findAll().stream()
+        List<Torneo> torneos = torneoRepository.findAll();
+        if (torneos.isEmpty()) {
+            throw new IllegalStateException("No existe un torneo configurado");
+        }
+
+        Torneo torneo = torneos.stream()
+                .filter(t -> t.getEstado() == EstadoTorneo.EN_JUEGO)
                 .findFirst()
-                .orElseThrow(() -> new IllegalStateException("No existe un torneo configurado"));
+                .orElse(torneos.get(0));
 
         List<Equipo> equipos = equipoRepository.findByTorneoId(torneo.getId());
         List<Partido> partidos = partidoRepository.findByTorneoIdAsList(torneo.getId());

@@ -11,7 +11,7 @@ import {
   Form,
   Badge,
 } from 'react-bootstrap'
-import { Trophy, Plus, Gear, CheckCircle, XCircle, PlayFill, LockFill } from 'react-bootstrap-icons'
+import { Trophy, Plus, Gear, CheckCircle, XCircle, PlayFill, LockFill, Folder2, ArrowRight } from 'react-bootstrap-icons'
 import { apiGet, apiPost, apiPut } from '../api'
 
 const initialTorneoForm = {
@@ -61,6 +61,35 @@ function TorneoCard({ torneo, selectedTorneoId, onSelectTorneo, onAction, isMuta
   const puedeCerrar = torneo.estado === 'INSCRIPCIONES_ABIERTAS'
   const puedeSorteo = torneo.estado === 'INSCRIPCIONES_CERRADAS'
   const puedeFinalizar = torneo.estado === 'EN_JUEGO'
+
+  const [showFases, setShowFases] = useState(false)
+  const [showAdvance, setShowAdvance] = useState(false)
+  const [advanceForm, setAdvanceForm] = useState({ nombreNuevaFase: '' })
+
+  const { data: fases = [], refetch: refetchFases } = useQuery({
+    queryKey: ['fases', torneo.id],
+    queryFn: () => apiGet(`/fases/torneo/${torneo.id}`),
+    enabled: showFases || showAdvance
+  })
+
+  const advanceMutation = useMutation({
+    mutationFn: (data) => apiPost(`/fases/torneo/${torneo.id}/avanzar?faseActualId=${data.faseActualId}&nombreNuevaFase=${data.nombreNuevaFase}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['torneos'])
+      refetchFases()
+      setShowAdvance(false)
+    },
+  })
+
+  const handleAdvance = (e) => {
+    e.preventDefault()
+    const ultimaFase = fases.sort((a, b) => b.orden - a.orden)[0]
+    if (!ultimaFase) return
+    advanceMutation.mutate({
+      faseActualId: ultimaFase.id,
+      nombreNuevaFase: advanceForm.nombreNuevaFase
+    })
+  }
 
   return (
     <Card className={`h-100 border-0 shadow-sm ${isSelected ? 'ring-2 ring-primary' : ''}`} style={{ transition: 'all 0.3s' }}>
@@ -169,10 +198,81 @@ function TorneoCard({ torneo, selectedTorneoId, onSelectTorneo, onAction, isMuta
                   <XCircle size={14} /> Finalizar
                 </Button>
               </div>
+
+              {torneo.estado === 'EN_JUEGO' && (
+                <div className="d-flex gap-2 mt-3 pt-3 border-top">
+                  <Button
+                    variant="outline-secondary"
+                    size="sm"
+                    className="flex-grow-1 fw-bold d-flex align-items-center justify-content-center gap-2"
+                    onClick={() => setShowFases(true)}
+                  >
+                    <Folder2 size={14} /> Fases
+                  </Button>
+                  <Button
+                    variant="dark"
+                    size="sm"
+                    className="flex-grow-1 fw-bold d-flex align-items-center justify-content-center gap-2"
+                    onClick={() => setShowAdvance(true)}
+                  >
+                    Avanzar <ArrowRight size={14} />
+                  </Button>
+                </div>
+              )}
             </div>
           </div>
         )}
       </Card.Body>
+
+      {/* Modal Lista de Fases */}
+      <Modal show={showFases} onHide={() => setShowFases(false)} size="sm" centered>
+        <Modal.Header closeButton className="border-0 pb-0">
+          <Modal.Title className="fw-bold h6">Cronograma de Fases</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {fases.sort((a, b) => b.orden - a.orden).map(f => (
+            <div key={f.id} className="d-flex align-items-center justify-content-between mb-3 p-2 bg-light rounded shadow-xs">
+              <div>
+                <div className="fw-bold small">{f.nombre}</div>
+                <div className="text-muted" style={{ fontSize: '0.6rem' }}>{f.tipo}</div>
+              </div>
+              {f.completada ? <CheckCircle className="text-success" /> : <div className="spinner-grow spinner-grow-sm text-primary" />}
+            </div>
+          ))}
+          {fases.length === 0 && <p className="text-center text-muted small py-3">No hay fases generadas.</p>}
+        </Modal.Body>
+      </Modal>
+
+      {/* Modal Avanzar Fase */}
+      <Modal show={showAdvance} onHide={() => setShowAdvance(false)} centered>
+        <Modal.Header closeButton className="border-0">
+          <Modal.Title className="fw-bold">Promoción de Fase</Modal.Title>
+        </Modal.Header>
+        <Form onSubmit={handleAdvance}>
+          <Modal.Body className="pt-0">
+            <p className="text-muted small mb-4">
+              Esta acción tomará los mejores equipos de la fase actual y generará los nuevos encuentros automáticamente.
+            </p>
+            <Form.Group>
+              <Form.Label className="small fw-bold text-muted text-uppercase">Nombre de la Nueva Fase</Form.Label>
+              <Form.Control
+                type="text"
+                placeholder="Ej: Cuartos de Final"
+                value={advanceForm.nombreNuevaFase}
+                onChange={(e) => setAdvanceForm({ nombreNuevaFase: e.target.value })}
+                className="bg-light border-0 shadow-none py-2"
+                required
+              />
+            </Form.Group>
+          </Modal.Body>
+          <Modal.Footer className="border-0">
+            <Button variant="light" onClick={() => setShowAdvance(false)}>Cancelar</Button>
+            <Button variant="primary" type="submit" disabled={advanceMutation.isPending}>
+              {advanceMutation.isPending ? <Spinner size="sm" /> : 'Confirmar Avance'}
+            </Button>
+          </Modal.Footer>
+        </Form>
+      </Modal>
     </Card>
   )
 }

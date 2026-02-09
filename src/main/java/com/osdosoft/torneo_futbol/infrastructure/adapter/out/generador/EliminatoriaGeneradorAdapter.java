@@ -16,16 +16,20 @@ public class EliminatoriaGeneradorAdapter implements GeneradorFasesPort {
     public List<Partido> generarPartidos(Fase fase, List<UUID> equiposIds) {
         List<Partido> partidos = new ArrayList<>();
 
-        // Simple pairing: 1 vs 2, 3 vs 4, etc.
-        // Assuming the list is already sorted by a seeding rule or randomly shuffled
-        for (int i = 0; i < equiposIds.size() - 1; i += 2) {
+        // Cross-seeding pairing: 1 vs Last, 2 vs Second to last
+        // This rewarding the top teams with the "easier" match-ups
+        int left = 0;
+        int right = equiposIds.size() - 1;
+
+        while (left < right) {
             partidos.add(new Partido(
                     UUID.randomUUID(),
                     fase.getTorneoId(),
-                    equiposIds.get(i),
-                    equiposIds.get(i + 1),
-                    1 // In elimination, jornada is usually the round (reusing the field)
-            ));
+                    equiposIds.get(left),
+                    equiposIds.get(right),
+                    1));
+            left++;
+            right--;
         }
 
         return partidos;
