@@ -24,13 +24,16 @@ public class EquipoController {
     private final InscribirEquipoUseCase inscribirEquipoUseCase;
     private final InscribirJugadorUseCase inscribirJugadorUseCase;
     private final ConsultarEquiposUseCase consultarEquiposUseCase;
+    private final com.osdosoft.torneo_futbol.domain.port.in.AutorizacionUseCase autorizacionUseCase;
 
     public EquipoController(InscribirEquipoUseCase inscribirEquipoUseCase,
             InscribirJugadorUseCase inscribirJugadorUseCase,
-            ConsultarEquiposUseCase consultarEquiposUseCase) {
+            ConsultarEquiposUseCase consultarEquiposUseCase,
+            com.osdosoft.torneo_futbol.domain.port.in.AutorizacionUseCase autorizacionUseCase) {
         this.inscribirEquipoUseCase = inscribirEquipoUseCase;
         this.inscribirJugadorUseCase = inscribirJugadorUseCase;
         this.consultarEquiposUseCase = consultarEquiposUseCase;
+        this.autorizacionUseCase = autorizacionUseCase;
     }
 
     @GetMapping
@@ -52,6 +55,7 @@ public class EquipoController {
     @PostMapping
     public ResponseEntity<EquipoResponse> inscribirEquipo(@PathVariable UUID torneoId,
             @Valid @RequestBody EquipoRequest request) {
+        autorizacionUseCase.validarPermiso(com.osdosoft.torneo_futbol.domain.model.enums.Permiso.EQUIPO_INSCRIBIR);
         Equipo equipo = inscribirEquipoUseCase.inscribirEquipo(torneoId, request.nombre(), request.delegadoEmail());
         return ResponseEntity.ok(mapEquipoResponse(equipo));
     }
@@ -61,6 +65,9 @@ public class EquipoController {
             @PathVariable UUID torneoId,
             @PathVariable UUID equipoId,
             @Valid @RequestBody JugadorRequest request) {
+        autorizacionUseCase
+                .validarPermiso(com.osdosoft.torneo_futbol.domain.model.enums.Permiso.EQUIPO_GESTIONAR_MI_PLANTILLA);
+        autorizacionUseCase.validarPropiedadEquipo(equipoId);
         Jugador jugador = inscribirJugadorUseCase.inscribirJugador(equipoId, request.nombre(), request.numeroCamiseta(),
                 torneoId);
         return ResponseEntity.ok(mapJugadorResponse(jugador));

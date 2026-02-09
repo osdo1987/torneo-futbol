@@ -34,6 +34,7 @@ public class TorneoController {
     private final FinalizarTorneoUseCase finalizarTorneoUseCase;
     private final ObtenerTablaPosicionesUseCase obtenerTablaPosicionesUseCase;
     private final ActualizarTorneoUseCase actualizarTorneoUseCase;
+    private final com.osdosoft.torneo_futbol.domain.port.in.AutorizacionUseCase autorizacionUseCase;
 
     public TorneoController(CrearTorneoUseCase crearTorneoUseCase,
             ConsultarTorneoUseCase consultarTorneoUseCase,
@@ -42,7 +43,8 @@ public class TorneoController {
             CerrarInscripcionesUseCase cerrarInscripcionesUseCase,
             FinalizarTorneoUseCase finalizarTorneoUseCase,
             ObtenerTablaPosicionesUseCase obtenerTablaPosicionesUseCase,
-            ActualizarTorneoUseCase actualizarTorneoUseCase) {
+            ActualizarTorneoUseCase actualizarTorneoUseCase,
+            com.osdosoft.torneo_futbol.domain.port.in.AutorizacionUseCase autorizacionUseCase) {
         this.crearTorneoUseCase = crearTorneoUseCase;
         this.consultarTorneoUseCase = consultarTorneoUseCase;
         this.sorteoUseCase = sorteoUseCase;
@@ -51,10 +53,12 @@ public class TorneoController {
         this.finalizarTorneoUseCase = finalizarTorneoUseCase;
         this.obtenerTablaPosicionesUseCase = obtenerTablaPosicionesUseCase;
         this.actualizarTorneoUseCase = actualizarTorneoUseCase;
+        this.autorizacionUseCase = autorizacionUseCase;
     }
 
     @PostMapping
     public ResponseEntity<TorneoResponse> crearTorneo(@Valid @RequestBody TorneoRequest request) {
+        autorizacionUseCase.validarPermiso(com.osdosoft.torneo_futbol.domain.model.enums.Permiso.TORNEO_CREAR);
         Torneo torneo = crearTorneoUseCase.crearTorneo(
                 request.nombre(),
                 request.maxJugadoresPorEquipo(),
@@ -67,6 +71,7 @@ public class TorneoController {
     @PutMapping("/{id}")
     public ResponseEntity<TorneoResponse> actualizarTorneo(@PathVariable UUID id,
             @Valid @RequestBody TorneoUpdateRequest request) {
+        autorizacionUseCase.validarPermiso(com.osdosoft.torneo_futbol.domain.model.enums.Permiso.TORNEO_EDITAR);
         Torneo torneo = actualizarTorneoUseCase.actualizarTorneo(
                 id,
                 request.nombre(),
@@ -91,24 +96,32 @@ public class TorneoController {
 
     @PostMapping("/{id}/inscripciones/abrir")
     public ResponseEntity<TorneoResponse> abrirInscripciones(@PathVariable UUID id) {
+        autorizacionUseCase
+                .validarPermiso(com.osdosoft.torneo_futbol.domain.model.enums.Permiso.TORNEO_GESTIONAR_ESTADO);
         Torneo torneo = abrirInscripcionesUseCase.abrirInscripciones(id);
         return ResponseEntity.ok(mapToResponse(torneo));
     }
 
     @PostMapping("/{id}/inscripciones/cerrar")
     public ResponseEntity<TorneoResponse> cerrarInscripciones(@PathVariable UUID id) {
+        autorizacionUseCase
+                .validarPermiso(com.osdosoft.torneo_futbol.domain.model.enums.Permiso.TORNEO_GESTIONAR_ESTADO);
         Torneo torneo = cerrarInscripcionesUseCase.cerrarInscripciones(id);
         return ResponseEntity.ok(mapToResponse(torneo));
     }
 
     @PostMapping("/{id}/sorteo")
     public ResponseEntity<Void> ejecutarSorteo(@PathVariable UUID id) {
+        autorizacionUseCase
+                .validarPermiso(com.osdosoft.torneo_futbol.domain.model.enums.Permiso.TORNEO_GESTIONAR_ESTADO);
         sorteoUseCase.ejecutarSorteo(id);
         return ResponseEntity.ok().build();
     }
 
     @PostMapping("/{id}/finalizar")
     public ResponseEntity<TorneoResponse> finalizarTorneo(@PathVariable UUID id) {
+        autorizacionUseCase
+                .validarPermiso(com.osdosoft.torneo_futbol.domain.model.enums.Permiso.TORNEO_GESTIONAR_ESTADO);
         Torneo torneo = finalizarTorneoUseCase.finalizarTorneo(id);
         return ResponseEntity.ok(mapToResponse(torneo));
     }

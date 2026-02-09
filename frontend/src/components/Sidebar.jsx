@@ -8,10 +8,12 @@ import {
   Table,
   Gear,
   TrophyFill,
-  BarChart
+  BarChart,
+  BoxArrowRight,
+  PersonCircle
 } from 'react-bootstrap-icons'
 
-export default function Sidebar({ torneos = [], selectedTorneoId, onSelectTorneo }) {
+export default function Sidebar({ torneos = [], selectedTorneoId, onSelectTorneo, user, onLogout }) {
   return (
     <div className="sidebar">
       <div className="sidebar-brand">
@@ -86,15 +88,24 @@ export default function Sidebar({ torneos = [], selectedTorneoId, onSelectTorneo
         </div>
       </nav>
 
-      <div className="sidebar-footer">
-        <div className="d-flex align-items-center gap-3">
-          <div className="bg-primary-accent rounded-circle d-flex align-items-center justify-content-center" style={{ width: 32, height: 32 }}>
-            <span className="fw-bold" style={{ fontSize: '0.75rem' }}>AD</span>
+      <div className="sidebar-footer border-top border-secondary border-opacity-10 pt-4">
+        <div className="d-flex align-items-center justify-content-between">
+          <div className="d-flex align-items-center gap-2 overflow-hidden">
+            <div className="bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center p-2" style={{ width: 32, height: 32 }}>
+              <PersonCircle size={20} />
+            </div>
+            <div className="overflow-hidden">
+              <p className="mb-0 fw-bold text-white text-truncate small">{user?.username || 'Usuario'}</p>
+              <p className="mb-0 text-muted text-truncate italic" style={{ fontSize: '0.65rem' }}>{user?.rol || 'Visitante'}</p>
+            </div>
           </div>
-          <div className="overflow-hidden">
-            <p className="mb-0 fw-semibold text-white text-truncate" style={{ fontSize: '0.85rem' }}>Administrador</p>
-            <p className="mb-0 text-muted text-truncate" style={{ fontSize: '0.75rem' }}>v2.0.4</p>
-          </div>
+          <button
+            onClick={onLogout}
+            className="btn btn-link text-muted p-0 shadow-none hover-text-danger"
+            title="Cerrar Sesión"
+          >
+            <BoxArrowRight size={18} />
+          </button>
         </div>
       </div>
     </div>

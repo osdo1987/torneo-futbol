@@ -1,0 +1,13 @@
+package com.osdosoft.torneo_futbol.domain.model.enums;
+
+public enum Permiso {
+    TORNEO_CREAR,
+    TORNEO_EDITAR,
+    TORNEO_GESTIONAR_ESTADO,
+    EQUIPO_INSCRIBIR,
+    EQUIPO_GESTIONAR_MI_PLANTILLA,
+    PARTIDO_PROGRAMAR,
+    PARTIDO_REGISTRAR_RESULTADO,
+    PARTIDO_REGISTRAR_EVENTO,
+    VER_ESTADISTICAS
+}

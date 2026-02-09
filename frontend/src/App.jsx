@@ -13,10 +13,16 @@ import TablaPage from './pages/Tabla.jsx'
 import EstadisticasPage from './pages/Estadisticas.jsx'
 import ConfigPage from './pages/Config.jsx'
 
+import LoginPage from './pages/Login.jsx'
+
 import './App.css'
 
 export default function App() {
   const [selectedTorneoId, setSelectedTorneoId] = useState('')
+  const [user, setUser] = useState(() => {
+    const saved = localStorage.getItem('user')
+    return saved ? JSON.parse(saved) : null
+  })
 
   const { data: torneos = [], isLoading, isError, error } = useQuery({
     queryKey: ['torneos'],
@@ -24,11 +30,24 @@ export default function App() {
   })
 
   useEffect(() => {
-    // Select the first tournament by default
     if (!selectedTorneoId && torneos.length > 0) {
       setSelectedTorneoId(torneos[0].id)
     }
   }, [torneos, selectedTorneoId])
+
+  const handleLogin = (userData) => {
+    setUser(userData)
+    localStorage.setItem('user', JSON.stringify(userData))
+  }
+
+  const handleLogout = () => {
+    setUser(null)
+    localStorage.removeItem('user')
+  }
+
+  if (!user) {
+    return <LoginPage onLogin={handleLogin} />
+  }
 
   return (
     <div className="app-container">
@@ -36,6 +55,8 @@ export default function App() {
         torneos={torneos}
         selectedTorneoId={selectedTorneoId}
         onSelectTorneo={setSelectedTorneoId}
+        user={user}
+        onLogout={handleLogout}
       />
 
       <main className="main-content">
@@ -56,13 +77,13 @@ export default function App() {
           {!isLoading && !isError && (
             <div className="fade-in">
               <Routes>
-                <Route path="/" element={<Dashboard selectedTorneoId={selectedTorneoId} />} />
-                <Route path="/torneos" element={<TorneosPage selectedTorneoId={selectedTorneoId} onSelectTorneo={setSelectedTorneoId} />} />
-                <Route path="/equipos" element={<EquiposPage selectedTorneoId={selectedTorneoId} />} />
-                <Route path="/partidos" element={<PartidosPage selectedTorneoId={selectedTorneoId} />} />
-                <Route path="/tabla" element={<TablaPage selectedTorneoId={selectedTorneoId} />} />
-                <Route path="/estadisticas" element={<EstadisticasPage selectedTorneoId={selectedTorneoId} />} />
-                <Route path="/config" element={<ConfigPage apiUrl={import.meta.env.VITE_API_URL || 'http://localhost:8080/api'} />} />
+                <Route path="/" element={<Dashboard selectedTorneoId={selectedTorneoId} user={user} />} />
+                <Route path="/torneos" element={<TorneosPage selectedTorneoId={selectedTorneoId} onSelectTorneo={setSelectedTorneoId} user={user} />} />
+                <Route path="/equipos" element={<EquiposPage selectedTorneoId={selectedTorneoId} user={user} />} />
+                <Route path="/partidos" element={<PartidosPage selectedTorneoId={selectedTorneoId} user={user} />} />
+                <Route path="/tabla" element={<TablaPage selectedTorneoId={selectedTorneoId} user={user} />} />
+                <Route path="/estadisticas" element={<EstadisticasPage selectedTorneoId={selectedTorneoId} user={user} />} />
+                <Route path="/config" element={<ConfigPage apiUrl={import.meta.env.VITE_API_URL || 'http://localhost:8080/api'} user={user} />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
             </div>
