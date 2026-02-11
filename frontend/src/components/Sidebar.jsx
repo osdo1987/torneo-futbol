@@ -11,7 +11,8 @@ import {
   BarChart,
   BoxArrowRight,
   PersonCircle,
-  Clock
+  Clock,
+  Broadcast
 } from 'react-bootstrap-icons'
 
 export default function Sidebar({ torneos = [], selectedTorneoId, onSelectTorneo, user, onLogout }) {
@@ -77,7 +78,19 @@ export default function Sidebar({ torneos = [], selectedTorneoId, onSelectTorneo
               <Clock size={16} />
               <span>Control en Vivo</span>
             </NavLink>
+            <NavLink to="/partidos-en-vivo" className={({ isActive }) => `nav-link-custom nav-link-submenu ${isActive ? 'active' : ''}`}>
+              <Broadcast size={16} />
+              <span>Partidos en Vivo</span>
+            </NavLink>
           </>
+        )}
+
+        {/* Para usuarios que no son organizadores ni árbitros, mostrar solo Partidos en Vivo */}
+        {user?.rol !== 'ORGANIZADOR' && user?.rol !== 'ARBITRO' && (
+          <NavLink to="/partidos-en-vivo" className={({ isActive }) => `nav-link-custom ${isActive ? 'active' : ''}`}>
+            <Broadcast size={18} />
+            <span>Partidos en Vivo</span>
+          </NavLink>
         )}
 
         <NavLink to="/tabla" className={({ isActive }) => `nav-link-custom ${isActive ? 'active' : ''}`}>
